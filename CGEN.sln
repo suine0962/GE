@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.33530.505
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CGEN", "CGEN.vcxproj", "{56E0CAA6-64C2-41D7-B2C2-A7E07F23D269}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{56E0CAA6-64C2-41D7-B2C2-A7E07F23D269}.Debug|x64.ActiveCfg = Debug|x64
+		{56E0CAA6-64C2-41D7-B2C2-A7E07F23D269}.Debug|x64.Build.0 = Debug|x64
+		{56E0CAA6-64C2-41D7-B2C2-A7E07F23D269}.Release|x64.ActiveCfg = Release|x64
+		{56E0CAA6-64C2-41D7-B2C2-A7E07F23D269}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {633B329F-2200-47C7-8AEC-F9B94FF7D087}
+	EndGlobalSection
+EndGlobal

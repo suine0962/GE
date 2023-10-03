@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include<Windows.h>
 #include<cstdint>
 #include <d3d12.h>

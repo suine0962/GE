@@ -42,7 +42,7 @@ void WinApp::CreateGameWindow(const wchar_t* title, UINT windowStyle, int32_t cl
 
 	AdjustWindowRect(&wrc, WS_OVERLAPPEDWINDOW, false);
 
-	HWND hwnd = CreateWindow(
+	 hwnd_ = CreateWindow(
 		wc_.lpszClassName,
 		L"CG2",
 		WS_OVERLAPPEDWINDOW,
@@ -54,7 +54,7 @@ void WinApp::CreateGameWindow(const wchar_t* title, UINT windowStyle, int32_t cl
 		nullptr,
 		wc_.hInstance,
 		nullptr);
-	ShowWindow(hwnd, SW_SHOW);
+	ShowWindow(hwnd_, SW_SHOW);
 
 #/*ifdef _DEBUG
 		ID3D12Debug1* debugController = nullptr;

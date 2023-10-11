@@ -1,5 +1,4 @@
-﻿#include"DirectXCommon.h"
-
+#include"DirectXCommon.h"
 void DirectXCommon::Initilize(WinApp* winApp, int32_t backBufferWidth,
 	int32_t backBufferHeight) {
 	//nullptrチェック
@@ -8,15 +7,20 @@ void DirectXCommon::Initilize(WinApp* winApp, int32_t backBufferWidth,
 	assert(4 <= backBufferHeight && backBufferHedth_ <= 4096);
 
 	winApp_ = winApp;
+
 	backBufferWidth_ = backBufferWidth;
 	backBufferHedth_ = backBufferHeight;
-	
+
+
+	CreateDebugLayer();
 	CreateFactory();
 	CreateAdapter();
 	InitilizeDevice();
 	InitializeCommand();
 	CreateSwapChain();
 	CreateDescriptorHeap();
+	CreateFence();
+	
 }
 
 
@@ -90,6 +94,37 @@ void DirectXCommon::InitilizeDevice()
 	//デバイスの生成がうまくいかなったので起動できない
 	assert(device_ != nullptr);
 	Log("Complete create D3D12Device!!!\n");//初期化完了のログを出す
+
+#ifdef _DEBUG
+
+	D3D12_MESSAGE_ID denyIds[] = {
+		//Dx12デバッグプレイヤーの相互作用バグによるエラーメッセージ
+			D3D12_MESSAGE_ID_RESOURCE_BARRIER_MISMATCHING_COMMAND_LIST_TYPE
+	};
+
+	if (SUCCEEDED(device_->QueryInterface(IID_PPV_ARGS(&infoQueue_))))
+	{
+		//抑制するレベル
+		D3D12_MESSAGE_SEVERITY severities[] = { D3D12_MESSAGE_SEVERITY_INFO };
+		D3D12_INFO_QUEUE_FILTER filter{};
+		filter.DenyList.NumIDs = _countof(denyIds);
+		filter.DenyList.pIDList = denyIds;
+		filter.DenyList.NumSeverities = _countof(severities);
+		filter.DenyList.pSeverityList = severities;
+		//指定したメッセージの表示を抑制する
+		infoQueue_->PushStorageFilter(&filter);
+
+		//やばいエラー時に止まる
+		infoQueue_->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
+		//エラー時に止まる
+		infoQueue_->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
+		//警告時に止まる
+		infoQueue_->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
+		//開放
+		infoQueue_->Release();
+
+	}
+#endif _DEBUG
 }
 
 
@@ -121,55 +156,17 @@ void DirectXCommon::InitializeCommand()
 void DirectXCommon::CreateDebugLayer()
 {
 #ifdef _DEBUG
-	debugController = nullptr;
-	infoQueue = nullptr;
+	debugController_ = nullptr;
+	infoQueue_ = nullptr;
 	
-	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
+	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController_))))
 	{
 		//デバッグレイヤーを有効かする
-		debugController->EnableDebugLayer();
+		debugController_->EnableDebugLayer();
 		//さらにGPU側でもチェックを行うようにする
-		debugController->SetEnableGPUBasedValidation(TRUE);
+		debugController_->SetEnableGPUBasedValidation(TRUE);
 	}
 #endif _DEBUG
-
-	
-	
-
-
-#ifdef _DEBUG
-
-	D3D12_MESSAGE_ID denyIds[] = {
-		//Dx12デバッグプレイヤーの相互作用バグによるエラーメッセージ
-			D3D12_MESSAGE_ID_RESOURCE_BARRIER_MISMATCHING_COMMAND_LIST_TYPE
-	};
-
-	if (SUCCEEDED(device_->QueryInterface(IID_PPV_ARGS(&infoQueue))))
-	{
-		//抑制するレベル
-		D3D12_MESSAGE_SEVERITY severities[] = { D3D12_MESSAGE_SEVERITY_INFO };
-		D3D12_INFO_QUEUE_FILTER filter{};
-		filter.DenyList.NumIDs = _countof(denyIds);
-		filter.DenyList.pIDList = denyIds;
-		filter.DenyList.NumSeverities = _countof(severities);
-		filter.DenyList.pSeverityList = severities;
-		//指定したメッセージの表示を抑制する
-		infoQueue->PushStorageFilter(&filter);
-
-		//やばいエラー時に止まる
-		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION,true);
-		//エラー時に止まる
-		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
-		//警告時に止まる
-		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
-		//開放
-		infoQueue->Release();
-
-	}
-#endif _DEBUG
-
-
-
 }
 
 
@@ -194,7 +191,74 @@ void DirectXCommon::CreateSwapChain()
 
 }
 
+ID3D12Resource* DirectXCommon::CreateBufferResource(ID3D12Device* device, size_t sizeInBytes)
+{
+	struct Vector4
+	{
+		float x;
+		float y;
+		float w;
+		float z;
+	};
+	struct Vector2
+	{
+		float x;
+		float y;
+	};
 
+	struct VertexData {
+		Vector4 position;
+		Vector2 texcoord;
+	};
+
+
+	//頂点リソース用のヒープの設定
+	D3D12_HEAP_PROPERTIES uploadHeapProperties{};
+	uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+	//頂点リソースの設定
+	D3D12_RESOURCE_DESC ResouceDesc{};
+
+	//バッファリソース,テクスチャまたは別の設定する
+	ResouceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	ResouceDesc.Width = sizeInBytes;
+
+	//バッファの場合はこれらを１にするのがきまり
+	ResouceDesc.Height = 1;
+	ResouceDesc.DepthOrArraySize = 1;
+	ResouceDesc.MipLevels = 1;
+	ResouceDesc.SampleDesc.Count = 1;
+	//バッファの場合はこれにするきまり
+	ResouceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	//実際に頂点リソースを作る
+	HRESULT hr = device->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE,
+		&ResouceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
+		IID_PPV_ARGS(&vertexResouce_));
+	assert(SUCCEEDED(hr));
+
+	//頂点バッファーをビューを作成する
+	//リソースの先頭のアドレスから使う
+	vertexBufferView_.BufferLocation = vertexResouce_->GetGPUVirtualAddress();
+	//使用するリソースは頂点３つ分のサイズ
+	vertexBufferView_.SizeInBytes = sizeof(VertexData) * 6;
+	//１頂点当たりのサイズ
+	vertexBufferView_.StrideInBytes = sizeof(VertexData);
+
+	//頂点リソースにデータを書き込む
+	VertexData* vertexData = nullptr;
+	//書き込むためのアドレスを取得
+	vertexResouce_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
+	//左下
+	vertexData[0].position = { -0.5f, -0.5f, 0.0f, 1.0f };
+	vertexData[0].texcoord = { 0.0f,1.0f };
+	//上
+	vertexData[1].position = { 0.0f,0.5f,0.0f,1.0f };
+	vertexData[1].texcoord = { 0.5f,0.0f };
+	//右下
+	vertexData[2].position = { 0.5f, -0.5f, 0.0f, 1.0f };
+	vertexData[2].texcoord = { 1.0f,1.0f };
+	return vertexResouce_;
+
+}
 
 
 void DirectXCommon::CreateDescriptorHeap()
@@ -216,7 +280,7 @@ void DirectXCommon::CreateDescriptorHeap()
 	//うまく取得できなければ起動できない
 	assert(SUCCEEDED(result));
 
-	result = swapChain_->GetBuffer(0, IID_PPV_ARGS(&swapChainResources_[1]));
+	result = swapChain_->GetBuffer(1, IID_PPV_ARGS(&swapChainResources_[1]));
 	assert(SUCCEEDED(result));
 	//RTVの設定
 	rtvDesc_.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;//出力結果をSRGBに変換して書き込む
@@ -238,30 +302,150 @@ void DirectXCommon::CreateDescriptorHeap()
 }
 
 
+
 void DirectXCommon::CreatePreDraw()
 {
 	HRESULT result = S_FALSE;
+
 	//バックバッファインデックスを取得
-	backBufferIndex = swapChain_->GetCurrentBackBufferIndex();
+	backBufferIndex_ = swapChain_->GetCurrentBackBufferIndex();
 	//描画先のRTVを設定する
-	commandList_->OMSetRenderTargets(1, &rtvHandles_[backBufferIndex], false, nullptr);
+	commandList_->OMSetRenderTargets(1, &rtvHandles_[backBufferIndex_], false, nullptr);
 	//指定した色で画面全体をクリアする
 	float ClearColor_[] = { 0.1f,0.25f,0.5f,1.0f };
-	commandList_->ClearRenderTargetView(rtvHandles_[backBufferIndex], ClearColor_, 0, nullptr);
+	//TransitionBarrierの設定
+	D3D12_RESOURCE_BARRIER barrier{};
+	//今回のバリアはTransition
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	//NONEにしておく
+	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	//バリアを張る対象のリソース.現在のバックバッファに対して行う
+	barrier.Transition.pResource = swapChainResources_[backBufferIndex_];
+	//遷移前のResourceState
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+	//遷移後のResourceState
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	//TransitionBarrierを張る
+	commandList_->ResourceBarrier(1, &barrier);
+	// リソースバリアを変更（描画対象→表示状態）
+	commandList_->ClearRenderTargetView(rtvHandles_[backBufferIndex_], ClearColor_, 0, nullptr);
+	//今回はRenderTargetからpresentにする
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+	//TransitionBarrierを張る
+	commandList_->ResourceBarrier(1, &barrier);
 	//コマンドリストの内容を確定させる.全てのコマンドを積んでからcloseすること
-	result = commandList_->Close();
-	assert(SUCCEEDED(result));
+	commandList_->Close();
 	//GPUにコマンドリストの実行を行わさせる
 	ID3D12CommandList* commandLists_[] = { commandList_ };
 	commandQueue_->ExecuteCommandLists(1, commandLists_);
+	commandList_->IASetVertexBuffers(0, 1, &vertexBufferView_);
 	//GPUとOSの画面の交換を行うように通知する
 	swapChain_->Present(1, 0);
+
+	//fenceのsignalを待つためのイベントを作成する
+	fenceEvent_ = CreateEvent(nullptr, false, false, nullptr);
+	assert(fenceEvent_ != nullptr);
+
+	//fenceの値を更新
+	fenceValue_++;
+
+	//GPUがここまでたどり着いたときにfenceの値を指定した値に代入するようにsignalを送る
+	commandQueue_->Signal(fence_, fenceValue_);
+	//fenceの値が指定したsignal値にたどり着いているか確認する
+	//GetCompletedValueの初期値はfence作成時に渡した初期値
+
+	if (fence_->GetCompletedValue() < fenceValue_)
+	{
+		//指定したsignalにたどり着いていないので、たどり着くまで待つようにするイベント
+		fence_->SetEventOnCompletion(fenceValue_, fenceEvent_);
+		//イベント待つ
+		WaitForSingleObject(fenceEvent_, INFINITE);
+	}
+
 	//次のフレーム用コマンドリストの準備
 	result = commandAllocator_->Reset();
 	assert(SUCCEEDED(result));
+
 	result = commandList_->Reset(commandAllocator_, nullptr);
 	assert(SUCCEEDED(result));
 }
+
+
+void DirectXCommon::CreateFence()
+{
+
+	fence_ = nullptr;
+	fenceValue_ = 0;
+	HRESULT result = S_FALSE;
+
+	//fence
+	result = device_->CreateFence(fenceValue_, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence_));
+	assert(SUCCEEDED(result));
+
+	////fenceのsignalを待つためのイベントを作成する
+	//fenceEvent_ = CreateEvent(NULL, FALSE, FALSE, NULL);
+	//assert(fenceEvent_ != nullptr);
+	////fenceの値を更新
+	//fenceValue_++;
+	////GPUがここまでたどり着いたときにfenceの値を指定した値に代入するようにsignalを送る
+	///commandQueue_->Signal(fence_, fenceValue_);
+	////fenceの値が指定したsignal値にたどり着いているか確認する
+	////GetCompletedValueの初期値はfence作成時に渡した初期値
+
+	//if (fence_->GetCompletedValue() < fenceValue_)
+	//{
+	//	//指定したsignalにたどり着いていないので、たどり着くまで待つようにするイベント
+	//	fence_->SetEventOnCompletion(fenceValue_, fenceEvent_);
+	//	//イベント待つ
+	//	WaitForSingleObject(fenceEvent_, INFINITE);
+	//}
+
+}
+
+void  DirectXCommon::CreateRelease()
+{
+	CloseHandle(fenceEvent_);
+	fence_->Release();
+	rtvDescriptorHeap_->Release();
+	swapChainResources_[0]->Release();
+	swapChainResources_[1]->Release();
+	swapChain_->Release();
+	commandList_->Release();
+	commandAllocator_->Release();
+	commandQueue_->Release();
+	device_->Release();
+	vertexResouce_->Release();
+	useAdapter_->Release();
+	dxgiFactory_->Release();
+#ifdef _DEBUG
+
+	debugController_->Release();
+
+#endif // _DEBUG
+	CloseHandle(winApp_->GetHwnd());
+}
+
+
+
+
+
+void DirectXCommon::CreateReportLive()
+{
+
+	
+	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug))))
+	{
+		debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
+		debug->ReportLiveObjects(DXGI_DEBUG_APP, DXGI_DEBUG_RLO_ALL);
+		debug->ReportLiveObjects(DXGI_DEBUG_D3D12, DXGI_DEBUG_RLO_ALL);
+		debug->Release();
+	}
+
+}
+
+
+
 
 
 

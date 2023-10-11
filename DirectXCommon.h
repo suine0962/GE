@@ -24,9 +24,9 @@ public:
 
 #pragma region get
 
-	ID3D12Device* Getdevice() { return device_; };
-	ID3D12Resource* GetVertexResouce() { return vertexResouce_; };
-	D3D12_VERTEX_BUFFER_VIEW GetVertexBufferView() { return vertexBufferView_; };
+	ID3D12Device* Getdevice() const{ return device_; };
+	ID3D12Resource* GetVertexResouce() const{ return vertexResouce_; };
+	D3D12_VERTEX_BUFFER_VIEW GetVertexBufferView()const{ return vertexBufferView_; };
 
 #pragma endregion
 	

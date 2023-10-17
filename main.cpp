@@ -22,6 +22,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	while (true)
 	{
 		directXCommon->CreatePreDraw();
+		textureManeger->Draw();
+		directXCommon->PostDraw();
 		if (winApp->ProcessMessage() == true)
 		{
 
@@ -30,8 +32,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		
 	}
 	directXCommon->CreateRelease();
-	textureManeger->PreDraw();
+	textureManeger->CreateRelease();
 	directXCommon->CreateReportLive();
-	textureManeger->CreateReportLive();
 	return 0;
 }

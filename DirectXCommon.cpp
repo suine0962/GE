@@ -191,81 +191,13 @@ void DirectXCommon::CreateSwapChain()
 
 }
 
-ID3D12Resource* DirectXCommon::CreateBufferResource(ID3D12Device* device, size_t sizeInBytes)
-{
-	struct Vector4
-	{
-		float x;
-		float y;
-		float w;
-		float z;
-	};
-	struct Vector2
-	{
-		float x;
-		float y;
-	};
 
-	struct VertexData {
-		Vector4 position;
-		Vector2 texcoord;
-	};
-
-
-	//頂点リソース用のヒープの設定
-	D3D12_HEAP_PROPERTIES uploadHeapProperties{};
-	uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
-	//頂点リソースの設定
-	D3D12_RESOURCE_DESC ResouceDesc{};
-
-	//バッファリソース,テクスチャまたは別の設定する
-	ResouceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	ResouceDesc.Width = sizeInBytes;
-
-	//バッファの場合はこれらを１にするのがきまり
-	ResouceDesc.Height = 1;
-	ResouceDesc.DepthOrArraySize = 1;
-	ResouceDesc.MipLevels = 1;
-	ResouceDesc.SampleDesc.Count = 1;
-	//バッファの場合はこれにするきまり
-	ResouceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-	//実際に頂点リソースを作る
-	HRESULT hr = device->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE,
-		&ResouceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
-		IID_PPV_ARGS(&vertexResouce_));
-	assert(SUCCEEDED(hr));
-
-	//頂点バッファーをビューを作成する
-	//リソースの先頭のアドレスから使う
-	vertexBufferView_.BufferLocation = vertexResouce_->GetGPUVirtualAddress();
-	//使用するリソースは頂点３つ分のサイズ
-	vertexBufferView_.SizeInBytes = sizeof(VertexData) * 6;
-	//１頂点当たりのサイズ
-	vertexBufferView_.StrideInBytes = sizeof(VertexData);
-
-	//頂点リソースにデータを書き込む
-	VertexData* vertexData = nullptr;
-	//書き込むためのアドレスを取得
-	vertexResouce_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
-	//左下
-	vertexData[0].position = { -0.5f, -0.5f, 0.0f, 1.0f };
-	vertexData[0].texcoord = { 0.0f,1.0f };
-	//上
-	vertexData[1].position = { 0.0f,0.5f,0.0f,1.0f };
-	vertexData[1].texcoord = { 0.5f,0.0f };
-	//右下
-	vertexData[2].position = { 0.5f, -0.5f, 0.0f, 1.0f };
-	vertexData[2].texcoord = { 1.0f,1.0f };
-	return vertexResouce_;
-
-}
 
 
 void DirectXCommon::CreateDescriptorHeap()
 {
 	rtvDescriptorHeap_ = nullptr;
-	D3D12_DESCRIPTOR_HEAP_DESC rtvDescriptorHeapDesc_{};
-	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc_{};
+	
 
 
 	HRESULT result = S_FALSE;
@@ -329,6 +261,20 @@ void DirectXCommon::CreatePreDraw()
 	commandList_->ResourceBarrier(1, &barrier);
 	// リソースバリアを変更（描画対象→表示状態）
 	commandList_->ClearRenderTargetView(rtvHandles_[backBufferIndex_], ClearColor_, 0, nullptr);
+
+
+}
+
+void DirectXCommon::PostDraw()
+{
+	HRESULT result = S_FALSE;
+	D3D12_RESOURCE_BARRIER barrier{};
+
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	//NONEにしておく
+	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	//バリアを張る対象のリソース.現在のバックバッファに対して行う
+	barrier.Transition.pResource = swapChainResources_[backBufferIndex_];
 	//今回はRenderTargetからpresentにする
 	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
@@ -339,7 +285,6 @@ void DirectXCommon::CreatePreDraw()
 	//GPUにコマンドリストの実行を行わさせる
 	ID3D12CommandList* commandLists_[] = { commandList_ };
 	commandQueue_->ExecuteCommandLists(1, commandLists_);
-	commandList_->IASetVertexBuffers(0, 1, &vertexBufferView_);
 	//GPUとOSの画面の交換を行うように通知する
 	swapChain_->Present(1, 0);
 
@@ -369,9 +314,8 @@ void DirectXCommon::CreatePreDraw()
 
 	result = commandList_->Reset(commandAllocator_, nullptr);
 	assert(SUCCEEDED(result));
+
 }
-
-
 void DirectXCommon::CreateFence()
 {
 
@@ -407,24 +351,27 @@ void  DirectXCommon::CreateRelease()
 {
 	CloseHandle(fenceEvent_);
 	fence_->Release();
-	rtvDescriptorHeap_->Release();
-	swapChainResources_[0]->Release();
+	infoQueue_->Release();
 	swapChainResources_[1]->Release();
+	swapChainResources_[0]->Release();
+	rtvDescriptorHeap_->Release();
 	swapChain_->Release();
 	commandList_->Release();
 	commandAllocator_->Release();
 	commandQueue_->Release();
 	device_->Release();
-	vertexResouce_->Release();
 	useAdapter_->Release();
 	dxgiFactory_->Release();
+	Getdevice()->Release();
+	GetcommandList()->Release();
 #ifdef _DEBUG
-
 	debugController_->Release();
-
 #endif // _DEBUG
-	CloseHandle(winApp_->GetHwnd());
+	
+	CloseWindow(winApp_->GetHwnd());
 }
+
+
 
 
 

@@ -9,7 +9,6 @@
 #include"WinApp.h"
 #include<dxgidebug.h>
 
-
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
 #pragma comment(lib,"dxguid.lib")
@@ -23,10 +22,8 @@ public:
 		int32_t backBufferHeight=WinApp::kWindowHeight);
 
 #pragma region get
-
-	ID3D12Device* Getdevice() const{ return device_; };
-	ID3D12Resource* GetVertexResouce() const{ return vertexResouce_; };
-	D3D12_VERTEX_BUFFER_VIEW GetVertexBufferView()const{ return vertexBufferView_; };
+	ID3D12Device* Getdevice(){ return device_; };
+	ID3D12GraphicsCommandList* GetcommandList() { return commandList_; };
 
 #pragma endregion
 	
@@ -55,11 +52,10 @@ private:
 	int32_t backBufferWidth_ = 0;
 	int32_t backBufferHedth_ = 0;
 
-	//vertexBufferViewの生成
 
-	ID3D12Resource* vertexResouce_ = nullptr;
-	D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
 	//ディスクリプタヒープの生成
+	D3D12_DESCRIPTOR_HEAP_DESC rtvDescriptorHeapDesc_{};
+	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc_{};
 	ID3D12DescriptorHeap* rtvDescriptorHeap_ = nullptr;
 	ID3D12Resource* swapChainResources_[2] = { nullptr };
 	//RTV
@@ -73,6 +69,8 @@ private:
 	ID3D12Fence* fence_ = nullptr;
 	UINT64 fenceValue_ = 0;
 	HANDLE fenceEvent_ ;
+
+
 
 	//ReportLiveObjects
 	IDXGIDebug1* debug;
@@ -103,5 +101,7 @@ public:
 
 	void CreateRelease();
 
-	ID3D12Resource* CreateBufferResource(ID3D12Device* device, size_t sizeInBytes);
+	void PostDraw();
+
+
 };

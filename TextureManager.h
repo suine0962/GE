@@ -1,7 +1,7 @@
 #pragma once
 #include"DirectXCommon.h"
 #include<dxcapi.h>
-
+#include"Mymath.h"
 
 #pragma comment(lib,"dxcompiler.lib")
 
@@ -9,21 +9,21 @@
 class TextureManeger
 {
 public:
-	void Initilize(WinApp*winApp,DirectXCommon* directX,int32_t backBufferWidth = WinApp::kWindowWidth,
+	void Initilize(WinApp* winApp, DirectXCommon* directX, int32_t backBufferWidth = WinApp::kWindowWidth,
 		int32_t backBufferHeight = WinApp::kWindowHeight);
 public:
 	void Log(const std::string& message);
 
 	IDxcBlob* CreateCompileShader(//compileするshaderファイルへのパス
-		const std::wstring &filePath,
+		const std::wstring& filePath,
 		//compilerに使用するプロファイル
-		const wchar_t *profile,
+		const wchar_t* profile,
 		//初期化で生成したものを3つ
 		IDxcUtils* dxcUtils,
 		IDxcCompiler3* dxcCompiler,
 		IDxcIncludeHandler* IncludeHandler);
 
-	ID3D12Resource* CreateBufferResource();
+	ID3D12Resource* CreateBufferResource(ID3D12Device* device, size_t SizeInBytes);
 	ID3D12Resource* CreateMateialResource();
 
 	void CreateDxcCommpiler();
@@ -32,13 +32,17 @@ public:
 	void CreateBlendState();
 	void CreateRasterizerState();
 	void CreateShader();
-	
+
 	void CreatePipeLineStateObject();
 	void CreateViewPort();
 
 	void Draw();
 	void CreateRelease();
-	
+	void CreateVertexResource();
+	void CreateTransformationMatrix();
+	void RenewalCBuffer();
+	void CreateWorldViewProjectionMatrix();
+
 private:
 	WinApp* winApp_ = nullptr;
 	DirectXCommon* directX_ = nullptr;
@@ -60,7 +64,7 @@ private:
 	//頂点リソースの設定
 	D3D12_RESOURCE_DESC ResouceDesc{};
 	D3D12_ROOT_SIGNATURE_DESC descriptionRootSignature{};
-	D3D12_ROOT_PARAMETER rootParameters[1] = {};
+	D3D12_ROOT_PARAMETER rootParameters[2] = {};
 
 	D3D12_HEAP_PROPERTIES uploadHeapProperties{};
 
@@ -86,4 +90,17 @@ private:
 
 	D3D12_VIEWPORT viewport_{};
 	D3D12_RECT scissorRect_{};
+
+	ID3D12Resource* wvpResource = nullptr;
+	Matrix4x4* wvpData = nullptr;
+
+	struct Transform
+	{
+		Vector3 scale;
+		Vector3 rotate;
+		Vector3 translate;
+	};
+	Transform transform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
+	Transform cameraTransform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,-5.0f}};
+	Matrix4x4* tramsformMatrixData= nullptr;
 };

@@ -92,13 +92,18 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="ComvertString.cpp" />
     <ClCompile Include="DirectXCommon.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Mymath.cpp" />
     <ClCompile Include="TextureManeger.cpp" />
     <ClCompile Include="WinApp.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ComvertString.h" />
     <ClInclude Include="DirectXCommon.h" />
+    <ClInclude Include="Matrix4x4.h" />
+    <ClInclude Include="Mymath.h" />
     <ClInclude Include="TextureManager.h" />
+    <ClInclude Include="Vector3.h" />
+    <ClInclude Include="Vector4.h" />
     <ClInclude Include="WinApp.h" />
   </ItemGroup>
   <ItemGroup>

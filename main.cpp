@@ -24,6 +24,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		directXCommon->CreatePreDraw();
 		textureManeger->Draw();
 		directXCommon->PostDraw();
+		textureManeger->RenewalCBuffer();
 		if (winApp->ProcessMessage() == true)
 		{
 

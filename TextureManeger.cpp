@@ -4,7 +4,13 @@
 void TextureManeger::Initilize(WinApp*winApp,DirectXCommon* directX, int32_t backBufferWidth,
 	int32_t backBufferHeight)
 {
-
+	struct Vector4
+	{
+		float x;
+		float y;
+		float w;
+		float z;
+	};
 	assert(winApp);
 	assert(directX);
 
@@ -23,9 +29,11 @@ void TextureManeger::Initilize(WinApp*winApp,DirectXCommon* directX, int32_t bac
 	CreateRasterizerState();
 	CreatePipeLineStateObject();
 	CreateViewPort();
-	CreateBufferResource();
-	//CreateMateialResource();
-
+	vertexResouce_ =CreateBufferResource(directX_->Getdevice(), sizeof(Vector4)*3);
+	CreateVertexResource();
+	CreateMateialResource();
+	CreateTransformationMatrix();
+	CreateWorldViewProjectionMatrix();
 }
 
 
@@ -129,6 +137,9 @@ void TextureManeger::CreateRootSignature()
 	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;//CBVを使う
 	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;//PixelShaderで使う
 	rootParameters[0].Descriptor.ShaderRegister = 0;//レジスタ番号０とバインド
+	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;//CBVを使う
+	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; //vertexshaderを使う
+	rootParameters[1].Descriptor.ShaderRegister = 0; //レジスタ番号0を使う
 	descriptionRootSignature.pParameters = rootParameters;//ルートパラメータ配列へのポインタ
 	descriptionRootSignature.NumParameters = _countof(rootParameters);//配列の長さ
 
@@ -155,15 +166,16 @@ void TextureManeger::CreateRootSignature()
 
 void TextureManeger::CreateInputLayout()
 {
+
 	//InputLayOut
 	inputElementDesc_[0].SemanticName = "POSITION";
 	inputElementDesc_[0].SemanticIndex = 0;
 	inputElementDesc_[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	inputElementDesc_[0].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-	/*inputElementDescs[1].SemanticName = "TEXCOORD";
-	inputElementDescs[1].SemanticIndex = 0;
-	inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
-	inputElementDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;*/
+	/*inputElementDesc_[1].SemanticName = "TEXCOORD";
+	inputElementDesc_[1].SemanticIndex = 0;
+	inputElementDesc_[1].Format = DXGI_FORMAT_R32G32_FLOAT;
+	inputElementDesc_[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;*/
 	inputLayoutDesc.pInputElementDescs = inputElementDesc_;
 	inputLayoutDesc.NumElements = _countof(inputElementDesc_);
 
@@ -236,7 +248,7 @@ void TextureManeger::CreatePipeLineStateObject()
 }
 
 
-ID3D12Resource* TextureManeger::CreateBufferResource()
+ID3D12Resource* TextureManeger::CreateBufferResource(ID3D12Device* device, size_t sizeInBytes)
 {
 
 	struct Vector4
@@ -265,7 +277,7 @@ ID3D12Resource* TextureManeger::CreateBufferResource()
 
 	//バッファリソース,テクスチャまたは別の設定する
 	ResouceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	ResouceDesc.Width = sizeof(Vector4) * 3;
+	ResouceDesc.Width = sizeInBytes;
 
 	//バッファの場合はこれらを１にするのがきまり
 	ResouceDesc.Height = 1;
@@ -275,42 +287,18 @@ ID3D12Resource* TextureManeger::CreateBufferResource()
 	//バッファの場合はこれにするきまり
 	ResouceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 	//実際に頂点リソースを作る
+	ID3D12Resource* Resource = nullptr;
 	HRESULT hr = directX_->Getdevice()->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE,
 		&ResouceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
-		IID_PPV_ARGS(&vertexResouce_));
+		IID_PPV_ARGS(&Resource));
 	assert(SUCCEEDED(hr));
-
-	//頂点バッファーをビューを作成する
-	//リソースの先頭のアドレスから使う
-	vertexBufferView_.BufferLocation = vertexResouce_->GetGPUVirtualAddress();
-	//使用するリソースは頂点３つ分のサイズ
-	vertexBufferView_.SizeInBytes = sizeof(VertexData) * 3;
-	//１頂点当たりのサイズ
-	vertexBufferView_.StrideInBytes = sizeof(VertexData);
-
-	//頂点リソースにデータを書き込む
-	VertexData* vertexData = nullptr;
-	//書き込むためのアドレスを取得
-	vertexResouce_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
-	//左下
-	vertexData[0].position = { -0.5f, -0.5f, 0.0f, 1.0f };
-	//vertexData[0].texcoord = { 0.0f,1.0f };
-	//上
-	vertexData[1].position = { 0.0f,0.5f,0.0f,1.0f };
-	//vertexData[1].texcoord = { 0.5f,0.0f };
-	//右下
-	vertexData[2].position = { 0.5f, -0.5f, 0.0f, 1.0f };
-
-	
-
-	//vertexData[2].texcoord = { 1.0f,1.0f };
-	return vertexResouce_;
-
+	return Resource;
 }
 
 
 ID3D12Resource* TextureManeger::CreateMateialResource()
 {
+
 	struct Vector4
 	{
 		float x;
@@ -318,8 +306,17 @@ ID3D12Resource* TextureManeger::CreateMateialResource()
 		float w;
 		float z;
 	};
+	struct Vector2
+	{
+		float x;
+		float y;
+	};
 
-	materialResource_ = CreateBufferResource();
+	struct VertexData {
+		Vector4 position;
+		//Vector2 texcoord;
+	};
+	materialResource_ = CreateBufferResource(directX_->Getdevice(),sizeof(Vector4));
 	Vector4* materialData = nullptr;
 
 	materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
@@ -328,6 +325,8 @@ ID3D12Resource* TextureManeger::CreateMateialResource()
 
 	return materialResource_;
 }
+
+
 
 void TextureManeger::CreateViewPort()
 {
@@ -354,6 +353,7 @@ void TextureManeger::CreateViewPort()
 
 void TextureManeger::Draw()
 {
+
 	directX_->GetcommandList()->RSSetViewports(1, &viewport_);//ViewProtを設定
 	directX_->GetcommandList()->RSSetScissorRects(1, &scissorRect_);//scirssor
 	//RootSignatureを設定,PSOに設定しているけど別途設定が必要
@@ -363,6 +363,7 @@ void TextureManeger::Draw()
 	//形状を設定。PSOに設定しているものとはまた別、同じものを設定すると考えておけばいい
 	directX_->GetcommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	directX_->GetcommandList()->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
+	directX_->GetcommandList()->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
 	//描画
 	directX_->GetcommandList()->DrawInstanced(3, 1, 0, 0);
 }
@@ -387,12 +388,90 @@ void TextureManeger::CreateRelease()
 	includeHandler_->Release();
 	dxcCompiler_->Release();
 	dxcUtils_->Release();
-	//materialResource_->Release();
+	materialResource_->Release();
 
 
 
 }
 
+void TextureManeger::CreateVertexResource()
+{
+
+	struct Vector4
+	{
+		float x;
+		float y;
+		float w;
+		float z;
+	};
+	struct Vector2
+	{
+		float x;
+		float y;
+	};
+
+	struct VertexData {
+		Vector4 position;
+		//Vector2 texcoord;
+	};
+
+	//頂点バッファーをビューを作成する
+	//リソースの先頭のアドレスから使う
+	vertexBufferView_.BufferLocation = vertexResouce_->GetGPUVirtualAddress();
+	//使用するリソースは頂点３つ分のサイズ
+	vertexBufferView_.SizeInBytes = sizeof(VertexData) * 3;
+	//１頂点当たりのサイズ
+	vertexBufferView_.StrideInBytes = sizeof(VertexData);
+
+	//頂点リソースにデータを書き込む
+	VertexData* vertexData = nullptr;
+	//書き込むためのアドレスを取得
+	vertexResouce_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
+	//左下
+	vertexData[0].position = { -0.5f, -0.5f, 0.0f, 1.0f };
+	//vertexData[0].texcoord = { 0.0f,1.0f };
+	//上
+	vertexData[1].position = { 0.0f,0.5f,0.0f,1.0f };
+	//vertexData[1].texcoord = { 0.5f,0.0f };
+	//右下
+	vertexData[2].position = { 0.5f, -0.5f, 0.0f, 1.0f };
+
+
+
+	//vertexData[2].texcoord = { 1.0f,1.0f };
+}
+
+
+void TextureManeger::CreateTransformationMatrix()
+{
+	//wvp用のリソースを作る,matrix4x4一つ分サイズを用意する
+	wvpResource = CreateBufferResource(directX_->Getdevice(), sizeof(Matrix4x4));
+	//データを書き込む
+	wvpData = nullptr;
+	//書き込むためのアドレス取得
+	wvpResource->Map(0, nullptr, reinterpret_cast<void**>(&wvpData));
+	//単位行列を書き込んでおく
+	*wvpData = MakeIdenttity4x4();
+}
+
+void TextureManeger::RenewalCBuffer()
+{
+	CreateWorldViewProjectionMatrix();
+	transform.rotate.y += 0.03f;	
+}
+
+void TextureManeger::CreateWorldViewProjectionMatrix()
+{
+	
+	Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
+	Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
+	Matrix4x4 viewMatrix = Inverse(cameraMatrix);
+	Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(winApp_->kWindowWidth) / float(winApp_->kWindowHeight), 0.1f, 100.0f);
+	Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
+	*wvpData = worldMatrix;
+
+
+}
 
 	
 

@@ -57,6 +57,7 @@ private:
 	D3D12_DESCRIPTOR_HEAP_DESC rtvDescriptorHeapDesc_{};
 	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc_{};
 	ID3D12DescriptorHeap* rtvDescriptorHeap_ = nullptr;
+	ID3D12DescriptorHeap* srvDescriptorHeap_ = nullptr;
 	ID3D12Resource* swapChainResources_[2] = { nullptr };
 	//RTV
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvStartHandle_;
@@ -70,12 +71,11 @@ private:
 	UINT64 fenceValue_ = 0;
 	HANDLE fenceEvent_ ;
 
-
-
 	//ReportLiveObjects
 	IDXGIDebug1* debug;
-public:
 
+public:
+	ID3D12DescriptorHeap* CreateDescriptorHeap(ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible);
 
 	void CreatePreDraw();
 
@@ -93,7 +93,7 @@ public:
 
 	void CreateSwapChain();
 
-	void CreateDescriptorHeap();
+	void CreateRTVDescriptorHeap();
 
 	void CreateFence();
 
@@ -103,5 +103,5 @@ public:
 
 	void PostDraw();
 
-
+	
 };

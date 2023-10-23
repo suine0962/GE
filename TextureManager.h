@@ -25,7 +25,7 @@ public:
 
 	ID3D12Resource* CreateBufferResource(ID3D12Device* device, size_t SizeInBytes);
 	ID3D12Resource* CreateMateialResource();
-
+	
 	void CreateDxcCommpiler();
 	void CreateRootSignature();
 	void CreateInputLayout();

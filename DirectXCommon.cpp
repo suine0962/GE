@@ -18,7 +18,7 @@ void DirectXCommon::Initilize(WinApp* winApp, int32_t backBufferWidth,
 	InitilizeDevice();
 	InitializeCommand();
 	CreateSwapChain();
-	CreateDescriptorHeap();
+	CreateRTVDescriptorHeap();
 	CreateFence();
 	
 }
@@ -173,6 +173,9 @@ void DirectXCommon::CreateDebugLayer()
 
 void DirectXCommon::CreateSwapChain()
 {
+	srvDescriptorHeap_ = CreateDescriptorHeap(device_, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128, true);
+	rtvDescriptorHeap_ = CreateDescriptorHeap(device_, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
+
 	swapChain_ = nullptr;
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
 
@@ -194,12 +197,9 @@ void DirectXCommon::CreateSwapChain()
 
 
 
-void DirectXCommon::CreateDescriptorHeap()
+void DirectXCommon::CreateRTVDescriptorHeap()
 {
-	rtvDescriptorHeap_ = nullptr;
 	
-
-
 	HRESULT result = S_FALSE;
 	rtvDescriptorHeapDesc_.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;//レンダーターゲットビュー用
 	rtvDescriptorHeapDesc_.NumDescriptors = 2;//ダブルバッファ用に２つ
@@ -347,6 +347,8 @@ void DirectXCommon::CreateFence()
 
 }
 
+
+
 void  DirectXCommon::CreateRelease()
 {
 	CloseHandle(fenceEvent_);
@@ -394,6 +396,17 @@ void DirectXCommon::CreateReportLive()
 
 
 
+ID3D12DescriptorHeap* CreateDescriptorHeap(ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible)
+{
+	ID3D12DescriptorHeap* descriptorHeap_ = nullptr;
+	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc_{};
+	descriptorHeapDesc_.Type = heapType;
+	descriptorHeapDesc_.NumDescriptors = numDescriptors;
+	descriptorHeapDesc_.Flags = shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	HRESULT hr = device->CreateDescriptorHeap(&descriptorHeapDesc_, IID_PPV_ARGS(&descriptorHeap_));
+	assert(SUCCEEDED(hr));
+	return descriptorHeap_;
+}
 
 
 

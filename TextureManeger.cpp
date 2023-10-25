@@ -1,478 +1,151 @@
-#include"TextureManager.h"
+#include"TextureManeger.h"
 
 
-void TextureManeger::Initilize(WinApp*winApp,DirectXCommon* directX, int32_t backBufferWidth,
-	int32_t backBufferHeight)
+void TextureManeger::Initilize()
 {
-	struct Vector4
-	{
-		float x;
-		float y;
-		float w;
-		float z;
-	};
-	assert(winApp);
-	assert(directX);
-
-	assert(4 <= backBufferWidth && backBufferWidth_ <= 4096);
-	assert(4 <= backBufferHeight && backBufferHedth_ <= 4096);
-
-	winApp_ = winApp;
-	directX_ = directX;
-	//winApp_->CreateGameWindow(L"CG2", 1280, 720);
-
-	CreateDxcCommpiler();
-	CreateRootSignature();
-	CreateInputLayout();
-	CreateBlendState();
-	CreateShader();
-	CreateRasterizerState();
-	CreatePipeLineStateObject();
-	CreateViewPort();
-	vertexResouce_ =CreateBufferResource(directX_->Getdevice(), sizeof(Vector4)*3);
-	CreateVertexResource();
-	CreateMateialResource();
-	CreateTransformationMatrix();
-	CreateWorldViewProjectionMatrix();
+	CoInitializeEx(0, COINIT_MULTITHREADED);
 }
 
 
-void TextureManeger::Log(const std::string& message)
-{
-	OutputDebugStringA(message.c_str());
 
+
+void TextureManeger::Finalize()
+{
+	CoUninitialize();
 }
 
-void TextureManeger::CreateDxcCommpiler()
+
+DirectX::ScratchImage TextureManeger::CreateMipImage(const std::string& filePath)
 {
 	HRESULT hr = S_FALSE;
 
-	hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxcUtils_));
+	//テクスチャファイルを読み込んでプログラムで使えるようにする
+	DirectX::ScratchImage image{};
+	std::wstring filePathw = ComvertString(filePath);
+	hr = DirectX::LoadFromWICFile(filePathw.c_str(), DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
 	assert(SUCCEEDED(hr));
 
-	hr = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&dxcCompiler_));
+	//ミップマップの生成
+	DirectX::ScratchImage mipImages{};
+	hr = DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DirectX::TEX_FILTER_SRGB, 0, mipImages);
 	assert(SUCCEEDED(hr));
+	//ミップマップ付きのデータを返す
+	return mipImages;
 
-	hr = dxcUtils_->CreateDefaultIncludeHandler(&includeHandler_);
-	assert(SUCCEEDED(hr));
 }
 
-
-IDxcBlob* TextureManeger::CreateCompileShader(
-	//compileするshaderファイルへのパス
-	const std::wstring &filePath,
-	//compilerに使用するプロファイル
-	const wchar_t *profile,
-	//初期化で生成したものを3つ
-	IDxcUtils* dxcUtils,
-	IDxcCompiler3* dxcCompiler,
-	IDxcIncludeHandler* IncludeHandler)
-
+void TextureManeger::UploadTexData(ID3D12Resource* tex, const DirectX::ScratchImage& mipImages)
 {
-	HRESULT hr = S_FALSE;
-	//これからシェーダをコンパイルする旨をログに出す
-	//1
-	Log(ComvertString(std::format(L"Begin CompileShader,path:{},profile:{}\n", filePath, profile)));
-	
-	hr = dxcUtils->LoadFile(filePath.c_str(), nullptr, &shaderSource_);
-	assert(SUCCEEDED(hr));
-	//読み込んだファイルの内容を設定する
-	DxcBuffer shaderSourceBuffer;
-	shaderSourceBuffer.Ptr = shaderSource_->GetBufferPointer();
-	shaderSourceBuffer.Size = shaderSource_->GetBufferSize();
-	shaderSourceBuffer.Encoding = DXC_CP_UTF8;//UTF8のの文字コードであることを通知
-
-	//2
-	LPCWSTR arguments[] = {
-	   filePath.c_str(),//コンパイラの対象ファイル名
-	   L"-E", L"main",//エントリーポイントの指定,基本main以外にはしない
-	   L"-T", profile,//shaderprofileの設定
-	   L"-Zi", L"-Qembed_debug",//デバッグ用の情報を埋め込む
-	   L"-Od", //最適化を外しておく
-	   L"-Zpr",//メモリレイアウトは行優先
-	};
-	//実際にshaderをコンパイラする
-
-	hr = dxcCompiler->Compile(
-		&shaderSourceBuffer,//読み込んだプロファイル
-		arguments,//コンパイルオプション
-		_countof(arguments),//コンパイルオプションの数
-		IncludeHandler,//includeが含まれた諸々
-		IID_PPV_ARGS(&shaderResult_));//コンパイル結果
-	assert(SUCCEEDED(hr));
-
-	//3
-	shaderResult_->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&shaderError), nullptr);
-
-	if (shaderError != nullptr && shaderError->GetStringLength() != 0)
+	//meta情報を取得
+	const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
+	//全mipmapについて
+	for (size_t mipLevel = 0; mipLevel < metadata.mipLevels; ++mipLevel)
 	{
-		Log(shaderError->GetStringPointer());
-		assert(false);
+		//miplevelを指定して各imageを取得
+		const DirectX::Image* img = mipImages.GetImage(mipLevel, 0, 0);
+		//textureに転送
+		HRESULT hr = tex->WriteToSubresource(
+			UINT(mipLevel),
+			nullptr,//全領域へコピー
+			img->pixels,//元データアドレス
+			UINT(img->rowPitch),//１ラインサイズ
+			UINT(img->slicePitch)//1枚サイズ
+		);
+		assert(SUCCEEDED(hr));
 	}
 
-	//4
-	//コンパイル結果から実行用のバイナリ部分を取得
-	shaderBlob_ = nullptr;
-	hr = shaderResult_->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob_), nullptr);
-	assert(SUCCEEDED(hr));
-
-	//成功したログを出す
-	Log(ComvertString(std::format(L"Compile Succeeded,path:{},profile:{}\n", filePath, profile)));
-	//もう使わないリソースを開放
-	shaderSource_->Release();
-	shaderResult_->Release();
-	//実行用のバイナリを返却
-	return shaderBlob_;
 
 }
 
-void TextureManeger::CreateRootSignature()
+D3D12_RESOURCE_DESC TextureManeger::SettingResource(const DirectX::TexMetadata& metadata)
 {
+
+	//1 metaDataをもとにresourceの設定
+	D3D12_RESOURCE_DESC resourceDesc{};
+
+	resourceDesc.Width = UINT(metadata.width);//Textureの幅
+	resourceDesc.Height = UINT(metadata.height);//Tectureの高さ
+	resourceDesc.MipLevels = UINT16(metadata.mipLevels);//mipmapの数
+	resourceDesc.DepthOrArraySize = UINT16(metadata.arraySize);//奥行or配列textureの配列数
+	resourceDesc.Format = metadata.format;//texureのformat
+	resourceDesc.SampleDesc.Count = 1;//サンプリングカウント1固定
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION(metadata.dimension);//textureの次元数.普段使っているのは2次元
+
+	return resourceDesc;
+}
+
+
+D3D12_HEAP_PROPERTIES TextureManeger::SettingHeap()
+{
+	//2 利用するheapの設定
+	D3D12_HEAP_PROPERTIES heapProperties{};
+
+	heapProperties.Type = D3D12_HEAP_TYPE_CUSTOM;//細かい設定を行う
+	heapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;//WriteBackポリシーでCPUアクセス可能
+	heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;//プロセッサの近くに配置
+
+	return heapProperties;
+}
+
+
+
+ID3D12Resource*TextureManeger:: CreateTexResource(const DirectX::TexMetadata& metadata, DirectXCommon* directX_)
+{
+	//3 Resoureの生成
+	ID3D12Resource* Resource_;
 	HRESULT hr = S_FALSE;
 
-	descriptionRootSignature.Flags =
-		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+	D3D12_RESOURCE_DESC resourceDesc{};
+	D3D12_HEAP_PROPERTIES heapProperties{};
 
-	//ルートパラメータ
-	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;//CBVを使う
-	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;//PixelShaderで使う
-	rootParameters[0].Descriptor.ShaderRegister = 0;//レジスタ番号０とバインド
-	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;//CBVを使う
-	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; //vertexshaderを使う
-	rootParameters[1].Descriptor.ShaderRegister = 0; //レジスタ番号0を使う
-	descriptionRootSignature.pParameters = rootParameters;//ルートパラメータ配列へのポインタ
-	descriptionRootSignature.NumParameters = _countof(rootParameters);//配列の長さ
 
-	//シリアライズしてバイナリにする
-	signatureBlob_ = nullptr;
-	errorBlob_ = nullptr;
+	//リソースの設定
+	resourceDesc= SettingResource(metadata);
+	heapProperties = SettingHeap();
 
-	hr = D3D12SerializeRootSignature(&descriptionRootSignature,
-		D3D_ROOT_SIGNATURE_VERSION_1, &signatureBlob_, &errorBlob_);
-	if (FAILED(hr))
-	{
-		Log(reinterpret_cast<char*>(errorBlob_->GetBufferPointer()));
-		assert(false);
-	}
-	//バイナリをもとに生成
-
-	hr =directX_->Getdevice()->CreateRootSignature(0, signatureBlob_->GetBufferPointer(),
-		signatureBlob_->GetBufferSize(), IID_PPV_ARGS(&rootSignature_));
-
+	//本体を作る
+	 hr = directX_->Getdevice()->CreateCommittedResource(
+		&heapProperties,//Heapの設定
+		D3D12_HEAP_FLAG_NONE,//Heapの特殊な設定
+		&resourceDesc,//Resourveの設定
+		D3D12_RESOURCE_STATE_GENERIC_READ,//初回のResourceState.Textureは基本読むだけ
+		nullptr,//Clear最適地.使わないでのnullptr
+		IID_PPV_ARGS(&Resource_));
 	assert(SUCCEEDED(hr));
 
+	return Resource_;
 
 }
 
-void TextureManeger::CreateInputLayout()
+void TextureManeger::LoadTexture(const std::string& filePath, DirectXCommon* directX_)
 {
+	//textureを読んで転送する
+	DirectX::ScratchImage mipImages = CreateMipImage(filePath);
+	const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
 
-	//InputLayOut
-	inputElementDesc_[0].SemanticName = "POSITION";
-	inputElementDesc_[0].SemanticIndex = 0;
-	inputElementDesc_[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	inputElementDesc_[0].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-	/*inputElementDesc_[1].SemanticName = "TEXCOORD";
-	inputElementDesc_[1].SemanticIndex = 0;
-	inputElementDesc_[1].Format = DXGI_FORMAT_R32G32_FLOAT;
-	inputElementDesc_[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;*/
-	inputLayoutDesc.pInputElementDescs = inputElementDesc_;
-	inputLayoutDesc.NumElements = _countof(inputElementDesc_);
-
-
-}
-
-void TextureManeger::CreateBlendState()
-{
-	//BlendStateの設定
+	ID3D12Resource* texResource = CreateTexResource(metadata, directX_);
+	UploadTexData(texResource, mipImages);
+	//ここまで
 	
-	//全ての色要素を書き込む
-	blendDesc_.RenderTarget[0].RenderTargetWriteMask =
-		D3D12_COLOR_WRITE_ENABLE_ALL;
-}
+	//ShaderResourceViewを作る
+	//matadataをもとにSRVの設定
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+	srvDesc.Format = metadata.format;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = UINT(metadata.mipLevels);
+	//SRVを作成するDescriptorHeapの場所を決める
+	D3D12_CPU_DESCRIPTOR_HANDLE texSrvHandleCPU = directX_->GetSrvDescriptorHeap_()->GetCPUDescriptorHandleForHeapStart();
+	texSrvHandleGPU = directX_->GetSrvDescriptorHeap_()->GetGPUDescriptorHandleForHeapStart();
 
-void TextureManeger::CreateRasterizerState()
-{
-	//裏面を表示しない
-	rasterizerDesc_.CullMode = D3D12_CULL_MODE_BACK;
-	//三角形の中を塗りつぶす
-	rasterizerDesc_.FillMode = D3D12_FILL_MODE_SOLID;
+	texSrvHandleCPU.ptr += directX_->Getdevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-}
-
-void TextureManeger::CreateShader()
-{
-	//shaderをコンパイラする
-	vertexShaderBlob_ = CreateCompileShader(L"./Object3d.VS.hlsl",
-		L"vs_6_0", dxcUtils_, dxcCompiler_,includeHandler_);
-	assert(vertexShaderBlob_ != nullptr);
-
-	pixelShaderBlob_ = CreateCompileShader(L"./Object3d.PS.hlsl",
-		L"ps_6_0", dxcUtils_, dxcCompiler_,includeHandler_);
-	assert(pixelShaderBlob_ != nullptr);
-
-
+	texSrvHandleGPU.ptr += directX_->Getdevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	//SRVの作成
+	directX_->Getdevice()->CreateShaderResourceView(texResource, &srvDesc, texSrvHandleCPU);
 
 }
 
 
-
-
-void TextureManeger::CreatePipeLineStateObject()
-{
-	HRESULT hr = S_FALSE;
-	//PSOの生成
-	graphicsPipelineStateDesc.pRootSignature = rootSignature_;//rootSignature
-	graphicsPipelineStateDesc.InputLayout = inputLayoutDesc;//inputLayout
-	graphicsPipelineStateDesc.VS = { vertexShaderBlob_->GetBufferPointer(),
-	vertexShaderBlob_->GetBufferSize() };//VertexShader
-	graphicsPipelineStateDesc.PS = { pixelShaderBlob_->GetBufferPointer(),
-	pixelShaderBlob_->GetBufferSize() };//pixelShader
-	graphicsPipelineStateDesc.BlendState = blendDesc_;//BlendState
-	graphicsPipelineStateDesc.RasterizerState = rasterizerDesc_;//RasterizerState
-
-	//書き込むRTVの情報
-	graphicsPipelineStateDesc.NumRenderTargets = 1;
-	graphicsPipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-	//利用するリポジトリ
-	graphicsPipelineStateDesc.PrimitiveTopologyType =
-		D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-	//どのように画面にに色を打ち込むかの設定
-	graphicsPipelineStateDesc.SampleDesc.Count = 1;
-	graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
-	//実際に生成
-	hr = directX_->Getdevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,
-		IID_PPV_ARGS(&graphicsPipelineState_));
-	assert(SUCCEEDED(hr));
-
-}
-
-
-ID3D12Resource* TextureManeger::CreateBufferResource(ID3D12Device* device, size_t sizeInBytes)
-{
-
-	struct Vector4
-	{
-		float x;
-		float y;
-		float w;
-		float z;
-	};
-	struct Vector2
-	{
-		float x;
-		float y;
-	};
-
-	struct VertexData {
-		Vector4 position;
-		//Vector2 texcoord;
-	};
-
-
-	//頂点リソース用のヒープの設定
-
-	uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
-	//頂点リソースの設定
-
-	//バッファリソース,テクスチャまたは別の設定する
-	ResouceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	ResouceDesc.Width = sizeInBytes;
-
-	//バッファの場合はこれらを１にするのがきまり
-	ResouceDesc.Height = 1;
-	ResouceDesc.DepthOrArraySize = 1;
-	ResouceDesc.MipLevels = 1;
-	ResouceDesc.SampleDesc.Count = 1;
-	//バッファの場合はこれにするきまり
-	ResouceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-	//実際に頂点リソースを作る
-	ID3D12Resource* Resource = nullptr;
-	HRESULT hr = directX_->Getdevice()->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE,
-		&ResouceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
-		IID_PPV_ARGS(&Resource));
-	assert(SUCCEEDED(hr));
-	return Resource;
-}
-
-
-ID3D12Resource* TextureManeger::CreateMateialResource()
-{
-
-	struct Vector4
-	{
-		float x;
-		float y;
-		float w;
-		float z;
-	};
-	struct Vector2
-	{
-		float x;
-		float y;
-	};
-
-	struct VertexData {
-		Vector4 position;
-		//Vector2 texcoord;
-	};
-	materialResource_ = CreateBufferResource(directX_->Getdevice(),sizeof(Vector4));
-	Vector4* materialData = nullptr;
-
-	materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
-
-	*materialData = Vector4(1.0f, 0.0f, 0.0f, 1.0f);
-
-	return materialResource_;
-}
-
-
-
-void TextureManeger::CreateViewPort()
-{
-	//ビューボート
-	//クライアント領域のサイズと一緒にして画面全体に表示
-	viewport_.Width = winApp_->kWindowWidth;
-	viewport_.Height = winApp_->kWindowHeight;
-	viewport_.TopLeftX = 0;
-	viewport_.TopLeftY = 0;
-	viewport_.MinDepth = 0.0f;
-	viewport_.MaxDepth = 1.0f;
-
-	//シザー短形
-	//基本的にビューポートと同じ短形が描画されるものとする
-	scissorRect_.left = 0;
-	scissorRect_.right = winApp_->kWindowWidth;
-	scissorRect_.top = 0;
-	scissorRect_.bottom = winApp_->kWindowHeight;
-
-
-
-}
-
-
-void TextureManeger::Draw()
-{
-
-	directX_->GetcommandList()->RSSetViewports(1, &viewport_);//ViewProtを設定
-	directX_->GetcommandList()->RSSetScissorRects(1, &scissorRect_);//scirssor
-	//RootSignatureを設定,PSOに設定しているけど別途設定が必要
-	directX_->GetcommandList()->SetGraphicsRootSignature(rootSignature_);
-	directX_->GetcommandList()->SetPipelineState(graphicsPipelineState_);///PSOを設定
-	directX_->GetcommandList()->IASetVertexBuffers(0, 1, &vertexBufferView_);
-	//形状を設定。PSOに設定しているものとはまた別、同じものを設定すると考えておけばいい
-	directX_->GetcommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	directX_->GetcommandList()->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
-	directX_->GetcommandList()->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
-	//描画
-	directX_->GetcommandList()->DrawInstanced(3, 1, 0, 0);
-}
-
-void TextureManeger::CreateRelease()
-{
-	pixelShaderBlob_->Release();
-	vertexShaderBlob_->Release();
-	graphicsPipelineState_->Release();
-	rootSignature_->Release();
-	vertexResouce_->Release();
-	shaderResult_->Release();
-	shaderSource_->Release();
-	shaderError->Release();
-	shaderBlob_->Release();
-	errorBlob_->Release();
-	signatureBlob_->Release();
-	if (errorBlob_)
-	{
-		errorBlob_->Release();
-	}
-	includeHandler_->Release();
-	dxcCompiler_->Release();
-	dxcUtils_->Release();
-	materialResource_->Release();
-
-
-
-}
-
-void TextureManeger::CreateVertexResource()
-{
-
-	struct Vector4
-	{
-		float x;
-		float y;
-		float w;
-		float z;
-	};
-	struct Vector2
-	{
-		float x;
-		float y;
-	};
-
-	struct VertexData {
-		Vector4 position;
-		//Vector2 texcoord;
-	};
-
-	//頂点バッファーをビューを作成する
-	//リソースの先頭のアドレスから使う
-	vertexBufferView_.BufferLocation = vertexResouce_->GetGPUVirtualAddress();
-	//使用するリソースは頂点３つ分のサイズ
-	vertexBufferView_.SizeInBytes = sizeof(VertexData) * 3;
-	//１頂点当たりのサイズ
-	vertexBufferView_.StrideInBytes = sizeof(VertexData);
-
-	//頂点リソースにデータを書き込む
-	VertexData* vertexData = nullptr;
-	//書き込むためのアドレスを取得
-	vertexResouce_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
-	//左下
-	vertexData[0].position = { -0.5f, -0.5f, 0.0f, 1.0f };
-	//vertexData[0].texcoord = { 0.0f,1.0f };
-	//上
-	vertexData[1].position = { 0.0f,0.5f,0.0f,1.0f };
-	//vertexData[1].texcoord = { 0.5f,0.0f };
-	//右下
-	vertexData[2].position = { 0.5f, -0.5f, 0.0f, 1.0f };
-
-
-
-	//vertexData[2].texcoord = { 1.0f,1.0f };
-}
-
-
-void TextureManeger::CreateTransformationMatrix()
-{
-	//wvp用のリソースを作る,matrix4x4一つ分サイズを用意する
-	wvpResource = CreateBufferResource(directX_->Getdevice(), sizeof(Matrix4x4));
-	//データを書き込む
-	wvpData = nullptr;
-	//書き込むためのアドレス取得
-	wvpResource->Map(0, nullptr, reinterpret_cast<void**>(&wvpData));
-	//単位行列を書き込んでおく
-	*wvpData = MakeIdenttity4x4();
-}
-
-void TextureManeger::RenewalCBuffer()
-{
-	CreateWorldViewProjectionMatrix();
-	transform.rotate.y += 0.03f;	
-}
-
-void TextureManeger::CreateWorldViewProjectionMatrix()
-{
-	
-	Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
-	Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
-	Matrix4x4 viewMatrix = Inverse(cameraMatrix);
-	Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(winApp_->kWindowWidth) / float(winApp_->kWindowHeight), 0.1f, 100.0f);
-	Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
-	*wvpData = worldMatrix;
-
-
-}
-
-	
 
 

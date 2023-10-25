@@ -2,14 +2,14 @@
 #include"DirectXCommon.h"
 #include<dxcapi.h>
 #include"Mymath.h"
-
+#include"TextureManeger.h"
 #pragma comment(lib,"dxcompiler.lib")
 
 
-class TextureManeger
+class Engine
 {
 public:
-	void Initilize(WinApp* winApp, DirectXCommon* directX, int32_t backBufferWidth = WinApp::kWindowWidth,
+	void Initilize(WinApp* winApp, DirectXCommon* directX,TextureManeger*texManeger, int32_t backBufferWidth = WinApp::kWindowWidth,
 		int32_t backBufferHeight = WinApp::kWindowHeight);
 public:
 	void Log(const std::string& message);
@@ -25,7 +25,7 @@ public:
 
 	ID3D12Resource* CreateBufferResource(ID3D12Device* device, size_t SizeInBytes);
 	ID3D12Resource* CreateMateialResource();
-	
+
 	void CreateDxcCommpiler();
 	void CreateRootSignature();
 	void CreateInputLayout();
@@ -46,7 +46,7 @@ public:
 private:
 	WinApp* winApp_ = nullptr;
 	DirectXCommon* directX_ = nullptr;
-
+	TextureManeger* texManeger_ = nullptr;
 
 	int32_t backBufferWidth_ = 0;
 	int32_t backBufferHedth_ = 0;
@@ -63,8 +63,9 @@ private:
 
 	//頂点リソースの設定
 	D3D12_RESOURCE_DESC ResouceDesc{};
+	D3D12_DESCRIPTOR_RANGE descriptorRange[1]{};
 	D3D12_ROOT_SIGNATURE_DESC descriptionRootSignature{};
-	D3D12_ROOT_PARAMETER rootParameters[2] = {};
+	D3D12_ROOT_PARAMETER rootParameters[3] = {};
 
 	D3D12_HEAP_PROPERTIES uploadHeapProperties{};
 
@@ -76,7 +77,7 @@ private:
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
 	ID3D12Resource* materialResource_ = nullptr;
 
-	D3D12_INPUT_ELEMENT_DESC inputElementDesc_[1]{};
+	D3D12_INPUT_ELEMENT_DESC inputElementDesc_[2]{};
 	D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
 	D3D12_BLEND_DESC blendDesc_{};
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
@@ -101,6 +102,6 @@ private:
 		Vector3 translate;
 	};
 	Transform transform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
-	Transform cameraTransform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,-5.0f}};
-	Matrix4x4* tramsformMatrixData= nullptr;
+	Transform cameraTransform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,-5.0f} };
+	Matrix4x4* tramsformMatrixData = nullptr;
 };

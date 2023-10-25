@@ -24,6 +24,9 @@ public:
 #pragma region get
 	ID3D12Device* Getdevice(){ return device_; };
 	ID3D12GraphicsCommandList* GetcommandList() { return commandList_; };
+	D3D12_RENDER_TARGET_VIEW_DESC GetRtvDesc_() { return rtvDesc_; };
+	DXGI_SWAP_CHAIN_DESC1 GetSwapChainDesc_() { return swapChainDesc; };
+	ID3D12DescriptorHeap* GetSrvDescriptorHeap_() { return  srvDescriptorHeap_; };
 
 #pragma endregion
 	
@@ -48,6 +51,7 @@ private:
 
 	//スワップチェーンを生成する
 	IDXGISwapChain4* swapChain_ = nullptr;
+	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
 
 	int32_t backBufferWidth_ = 0;
 	int32_t backBufferHedth_ = 0;

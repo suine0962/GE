@@ -1,39 +1,43 @@
 #include<Windows.h>
 #include "WinApp.h"
 #include"DirectXCommon.h"
-#include"TextureManager.h"
-
-
+#include"Engine.h"
+#include"imguiManeger.h"
+#include"TextureManeger.h"
 //Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//出力ウィンドウへの文字入力
+
 	WinApp* winApp = new WinApp();
 	DirectXCommon* directXCommon = new DirectXCommon();
-	TextureManeger* textureManeger = new TextureManeger();
+	Engine* engine_ = new Engine();
+	ImGuiManager* imguiManeger = new ImGuiManager();
+	TextureManeger* texManeger = new TextureManeger();
 
 	winApp->CreateGameWindow();
 	directXCommon->Initilize(winApp);
-	textureManeger->Initilize(winApp,directXCommon);
-	
-	
-
+	engine_->Initilize(winApp,directXCommon,texManeger);
+	imguiManeger->Initialize(winApp,directXCommon);
 
 	//ゲームシーン
 	while (true)
 	{
+		imguiManeger->BeginFlame(directXCommon);
 		directXCommon->CreatePreDraw();
-		textureManeger->Draw();
+		engine_->Draw();
+		imguiManeger->EndFlame(directXCommon);
 		directXCommon->PostDraw();
-		textureManeger->RenewalCBuffer();
+		engine_->RenewalCBuffer();
+
 		if (winApp->ProcessMessage() == true)
 		{
-
 			break;
 		}
-		
 	}
+
 	directXCommon->CreateRelease();
-	textureManeger->CreateRelease();
+	engine_->CreateRelease();
 	directXCommon->CreateReportLive();
+	
 	return 0;
 }

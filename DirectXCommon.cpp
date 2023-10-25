@@ -31,7 +31,19 @@ void DirectXCommon:: Log(const std::string& message)
 
 }
 
+ID3D12DescriptorHeap* DirectXCommon::CreateDescriptorHeap(ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible)
+{
+	ID3D12DescriptorHeap* descriptHeap = nullptr;
+	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
+	descriptorHeapDesc.Type = heapType;
+	descriptorHeapDesc.NumDescriptors = numDescriptors;
+	descriptorHeapDesc.Flags = shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 
+	HRESULT hr = device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&descriptHeap));
+	assert(SUCCEEDED(hr));
+	return descriptHeap;
+
+}
 
 
 
@@ -177,7 +189,7 @@ void DirectXCommon::CreateSwapChain()
 	rtvDescriptorHeap_ = CreateDescriptorHeap(device_, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
 
 	swapChain_ = nullptr;
-	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
+	
 
 	swapChainDesc.Width = backBufferWidth_;//画面の幅
 	swapChainDesc.Height = backBufferHedth_;//画面の幅
@@ -396,17 +408,7 @@ void DirectXCommon::CreateReportLive()
 
 
 
-ID3D12DescriptorHeap* CreateDescriptorHeap(ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible)
-{
-	ID3D12DescriptorHeap* descriptorHeap_ = nullptr;
-	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc_{};
-	descriptorHeapDesc_.Type = heapType;
-	descriptorHeapDesc_.NumDescriptors = numDescriptors;
-	descriptorHeapDesc_.Flags = shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	HRESULT hr = device->CreateDescriptorHeap(&descriptorHeapDesc_, IID_PPV_ARGS(&descriptorHeap_));
-	assert(SUCCEEDED(hr));
-	return descriptorHeap_;
-}
+
 
 
 

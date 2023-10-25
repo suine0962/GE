@@ -8,17 +8,22 @@
 #include"WinApp.h"
 #include"DirectXCommon.h"
 
+struct texResourceProperty
+{
+	D3D12_GPU_DESCRIPTOR_HANDLE SrvHandleGPU;
+	ID3D12Resource* Resource;
+
+};
+
 class TextureManeger
 {
 public:
-
-
 
 	void Initilize();
 	void Finalize();
 
 	void UploadTexData(ID3D12Resource* tex, const DirectX::ScratchImage& mipImage);
-	void LoadTexture(const std::string& filePath, DirectXCommon*directX_);
+	/*void LoadTexture(const std::string& filePath, DirectXCommon*directX_);*/
 
 
 	DirectX::ScratchImage CreateMipImage(const std::string& filePath);
@@ -27,10 +32,10 @@ public:
 	D3D12_HEAP_PROPERTIES SettingHeap();
 	ID3D12Resource* CreateTexResource(const DirectX::TexMetadata& metadata, DirectXCommon* directX_);
 
-	D3D12_GPU_DESCRIPTOR_HANDLE GettexSrvHandleGPU() { return texSrvHandleGPU; };
+	
+	texResourceProperty LoadTexture(const std::string& filePath, DirectXCommon*directX_);
 	
 private:
-	D3D12_GPU_DESCRIPTOR_HANDLE texSrvHandleGPU;
 };
 
 

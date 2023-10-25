@@ -3,6 +3,8 @@
 #include<dxcapi.h>
 #include"Mymath.h"
 #include"TextureManeger.h"
+#include"Vector4.h"
+#include"Vector2.h"
 #pragma comment(lib,"dxcompiler.lib")
 
 
@@ -61,9 +63,13 @@ private:
 
 	IDxcBlobUtf8* shaderError = nullptr;
 
+	struct VertexData {
+		Vector4 position;
+		Vector2 texcoord;
+	};
+
 	//頂点リソースの設定
 	D3D12_RESOURCE_DESC ResouceDesc{};
-	D3D12_DESCRIPTOR_RANGE descriptorRange[1]{};
 	D3D12_ROOT_SIGNATURE_DESC descriptionRootSignature{};
 	D3D12_ROOT_PARAMETER rootParameters[3] = {};
 
@@ -94,6 +100,8 @@ private:
 
 	ID3D12Resource* wvpResource = nullptr;
 	Matrix4x4* wvpData = nullptr;
+
+	texResourceProperty tex;
 
 	struct Transform
 	{

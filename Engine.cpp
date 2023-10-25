@@ -4,24 +4,6 @@
 void Engine::Initilize(WinApp* winApp, DirectXCommon* directX,TextureManeger*texManeger, int32_t backBufferWidth,
 	int32_t backBufferHeight)
 {
-	struct Vector4
-	{
-		float x;
-		float y;
-		float w;
-		float z;
-	};
-	struct Vector2
-	{
-		float x;
-		float y;
-	};
-
-	struct VertexData {
-		Vector4 position;
-		Vector2 texcoord;
-	};
-
 	assert(winApp);
 	assert(directX);
 	assert(texManeger);
@@ -158,6 +140,8 @@ void Engine::CreateRootSignature()
 	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; //vertexshaderを使う
 	rootParameters[1].Descriptor.ShaderRegister = 0; //レジスタ番号0を使う
 
+
+	D3D12_DESCRIPTOR_RANGE descriptorRange[1]{};
 	//DescriptorRange
 	descriptorRange[0].BaseShaderRegister = 0;//0から始まる
 	descriptorRange[0].NumDescriptors = 1;//数は1つ
@@ -168,6 +152,9 @@ void Engine::CreateRootSignature()
 	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	rootParameters[2].DescriptorTable.pDescriptorRanges = descriptorRange;
 	rootParameters[2].DescriptorTable.NumDescriptorRanges = _countof(descriptorRange);
+
+	descriptionRootSignature.pParameters = rootParameters;//ルートパラメータ配列へのポインタ
+	descriptionRootSignature.NumParameters = _countof(rootParameters);//配列の長さ
 
 	//Samplerの設定
 	D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};
@@ -184,8 +171,7 @@ void Engine::CreateRootSignature()
 	descriptionRootSignature.pStaticSamplers = staticSamplers;
 	descriptionRootSignature.NumStaticSamplers = _countof(staticSamplers);
 
-	descriptionRootSignature.pParameters = rootParameters;//ルートパラメータ配列へのポインタ
-	descriptionRootSignature.NumParameters = _countof(rootParameters);//配列の長さ
+
 
 	//シリアライズしてバイナリにする
 	signatureBlob_ = nullptr;
@@ -295,26 +281,6 @@ void Engine::CreatePipeLineStateObject()
 
 ID3D12Resource* Engine::CreateBufferResource(ID3D12Device* device, size_t sizeInBytes)
 {
-
-	struct Vector4
-	{
-		float x;
-		float y;
-		float w;
-		float z;
-	};
-	struct Vector2
-	{
-		float x;
-		float y;
-	};
-
-	struct VertexData {
-		Vector4 position;
-		Vector2 texcoord;
-	};
-
-
 	//頂点リソース用のヒープの設定
 
 	uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
@@ -344,18 +310,6 @@ ID3D12Resource* Engine::CreateBufferResource(ID3D12Device* device, size_t sizeIn
 ID3D12Resource* Engine::CreateMateialResource()
 {
 
-	struct Vector4
-	{
-		float x;
-		float y;
-		float w;
-		float z;
-	};
-	struct Vector2
-	{
-		float x;
-		float y;
-	};
 
 	struct VertexData {
 		Vector4 position;
@@ -409,7 +363,7 @@ void Engine::Draw()
 	directX_->GetcommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	directX_->GetcommandList()->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
 	directX_->GetcommandList()->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
-	directX_->GetcommandList()->SetGraphicsRootDescriptorTable(2, texManeger_->GettexSrvHandleGPU());
+	directX_->GetcommandList()->SetGraphicsRootDescriptorTable(2,tex.SrvHandleGPU);
 	//描画
 	directX_->GetcommandList()->DrawInstanced(3, 1, 0, 0);
 }
@@ -435,7 +389,7 @@ void Engine::CreateRelease()
 	dxcCompiler_->Release();
 	dxcUtils_->Release();
 	materialResource_->Release();
-
+	tex.Resource->Release();
 
 
 }

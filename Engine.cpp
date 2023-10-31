@@ -24,11 +24,14 @@ void Engine::Initilize(WinApp* winApp, DirectXCommon* directX,TextureManeger*tex
 	CreateRasterizerState();
 	CreatePipeLineStateObject();
 	CreateViewPort();
-	vertexResouce_ = CreateBufferResource(directX_->Getdevice(), sizeof(VertexData) * 3);
+	vertexResouce_ = CreateBufferResource(directX_->Getdevice(), sizeof(VertexData) * 6);
 	CreateVertexResource();
 	CreateMateialResource();
 	CreateTransformationMatrix();
 	CreateWorldViewProjectionMatrix();
+	CreateVertexResourceSprite();
+	CreateTransformationMatrixResourceSprite();
+	TextureLoad("DefaultResources/uvChecker.png", directX_);
 }
 
 
@@ -246,7 +249,17 @@ void Engine::CreateShader()
 
 }
 
+void Engine::CreateDepthStencilState()
+{
+	D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
+	depthStencilDesc.DepthEnable = true;
+	depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+	depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 
+	graphicsPipelineStateDesc.DepthStencilState = depthStencilDesc;
+	graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+
+}
 
 
 void Engine::CreatePipeLineStateObject()
@@ -320,7 +333,7 @@ ID3D12Resource* Engine::CreateMateialResource()
 
 	materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
 
-	*materialData = Vector4(1.0f, 0.0f, 0.0f, 1.0f);
+	*materialData = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	return materialResource_;
 }
@@ -352,6 +365,7 @@ void Engine::CreateViewPort()
 
 void Engine::Draw()
 {
+	const texResourceProperty& texLoad = texManeger_->Gettex();
 
 	directX_->GetcommandList()->RSSetViewports(1, &viewport_);//ViewProtを設定
 	directX_->GetcommandList()->RSSetScissorRects(1, &scissorRect_);//scirssor
@@ -359,13 +373,15 @@ void Engine::Draw()
 	directX_->GetcommandList()->SetGraphicsRootSignature(rootSignature_);
 	directX_->GetcommandList()->SetPipelineState(graphicsPipelineState_);///PSOを設定
 	directX_->GetcommandList()->IASetVertexBuffers(0, 1, &vertexBufferView_);
+	directX_->GetcommandList()->IASetVertexBuffers(0, 1, &vertexBufferViewSprite_);
 	//形状を設定。PSOに設定しているものとはまた別、同じものを設定すると考えておけばいい
 	directX_->GetcommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	directX_->GetcommandList()->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
 	directX_->GetcommandList()->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
-	directX_->GetcommandList()->SetGraphicsRootDescriptorTable(2,tex.SrvHandleGPU);
+	directX_->GetcommandList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
+	directX_->GetcommandList()->SetGraphicsRootDescriptorTable(2,texLoad.SrvHandleGPU);
 	//描画
-	directX_->GetcommandList()->DrawInstanced(3, 1, 0, 0);
+	directX_->GetcommandList()->DrawInstanced(6, 1, 0, 0);
 }
 
 void Engine::CreateRelease()
@@ -389,26 +405,13 @@ void Engine::CreateRelease()
 	dxcCompiler_->Release();
 	dxcUtils_->Release();
 	materialResource_->Release();
-	tex.Resource->Release();
+	//tex.Resource->Release();
 
 
 }
 
 void Engine::CreateVertexResource()
 {
-
-	struct Vector4
-	{
-		float x;
-		float y;
-		float w;
-		float z;
-	};
-	struct Vector2
-	{
-		float x;
-		float y;
-	};
 
 	struct VertexData {
 		Vector4 position;
@@ -419,7 +422,7 @@ void Engine::CreateVertexResource()
 	//リソースの先頭のアドレスから使う
 	vertexBufferView_.BufferLocation = vertexResouce_->GetGPUVirtualAddress();
 	//使用するリソースは頂点３つ分のサイズ
-	vertexBufferView_.SizeInBytes = sizeof(VertexData) * 3;
+	vertexBufferView_.SizeInBytes = sizeof(VertexData) * 6;
 	//１頂点当たりのサイズ
 	vertexBufferView_.StrideInBytes = sizeof(VertexData);
 
@@ -436,8 +439,67 @@ void Engine::CreateVertexResource()
 	//右下
 	vertexData[2].position = { 0.5f, -0.5f, 0.0f, 1.0f };
 	vertexData[2].texcoord = { 1.0f,1.0f };
+
+
+	//左下
+	vertexData[3].position = { -0.5f,-0.5f,0.5f,1.0f };
+	vertexData[3].texcoord = { 0.0f,1.0f };
+	//上
+	vertexData[4].position = { 0.0f,0.0f,0.0f,1.0f };
+	vertexData[4].texcoord = { 0.5f,0.0f };
+	//右下
+	vertexData[5].position = { 0.5f,-0.5f,-0.5f,1.0f };
+	vertexData[5].texcoord = { 1.0f,1.0f };
 }
 
+void Engine::CreateVertexResourceSprite()
+{
+	//sprite用の頂点リソースを作る
+	ID3D12Resource* vertexResourceSprite = CreateBufferResource(directX_->Getdevice(), sizeof(VertexData) * 6);
+
+	//頂点バッファビューを作る
+	
+	//リソースの先頭のアドレスから使う
+	vertexBufferViewSprite_.BufferLocation = vertexResourceSprite->GetGPUVirtualAddress();
+	//使用するリソースのサイズは頂点６つ分のサイス
+	vertexBufferViewSprite_.SizeInBytes = sizeof(VertexData) * 6;
+	//１頂点あたりのサイズ
+	vertexBufferViewSprite_.StrideInBytes = sizeof(VertexData);
+
+	VertexData* vertexDataSprite = nullptr;
+	vertexResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&vertexDataSprite));
+
+	//一枚目の三角形
+	//左下
+	vertexDataSprite[0].position = { 0.0f,360.0f,0.0f,1.0f };
+	vertexDataSprite[0].texcoord = { 0.0f,1.0f };
+	//左上
+	vertexDataSprite[1].position = { 0.0f,0.0f,0.0f,1.0f };
+	vertexDataSprite[1].texcoord = { 0.0f,0.0f };
+	//右下
+	vertexDataSprite[2].position = { 640.0f,360.0f,0.0f,1.0f };
+	vertexDataSprite[2].texcoord = { 1.0f,1.0f };
+
+	//二枚目の三角形
+	//左上
+	vertexDataSprite[3].position = { 0.0f,0.0f,0.0f,1.0f };
+	vertexDataSprite[3].texcoord = { 0.0f,0.0f };
+	//左上
+	vertexDataSprite[4].position = { 640.0f,0.0f,0.0f,1.0f, };
+	vertexDataSprite[4].texcoord = { 1.0f,0.0f };
+	//右下
+	vertexDataSprite[5].position = { 640.0f,360.0f,0.0f,1.0f };
+	vertexDataSprite[5].texcoord = { 1.0f,1.0f };
+
+
+}
+
+void Engine::TextureLoad(const std::string& filePath, DirectXCommon* directX_)
+{
+
+	texManeger_->LoadTexture(filePath,directX_);
+
+}
 
 void Engine::CreateTransformationMatrix()
 {
@@ -451,10 +513,30 @@ void Engine::CreateTransformationMatrix()
 	*wvpData = MakeIdenttity4x4();
 }
 
+void Engine::CreateTransformationMatrixResourceSprite()
+{
+	//sprite用のTransformaitonMatrix用のリソースを作る。Matrix4x4 1つ分のサイズを用意する
+	transformationMatrixResourceSprite = CreateBufferResource(directX_->Getdevice(), sizeof(Matrix4x4));
+	//データを書き込む
+	Matrix4x4* trasformationMatrixDataSprite = nullptr;
+	//書き込むためのアドレス取得
+	transformationMatrixResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&trasformationMatrixDataSprite));
+	//単位行列を書き込んでおく
+	*trasformationMatrixDataSprite = MakeIdenttity4x4();
+
+	//sprite用のworldViewProjectionMatrixを作る
+	Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
+	Matrix4x4 viewMatrixSprite = MakeIdenttity4x4();
+	Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(winApp_->kWindowWidth), float(winApp_->kWindowHeight),
+		0.0f, 100.0f);
+	Matrix4x4 worldViewProjectionMatrixSprite = Multiply(worldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
+	*trasformationMatrixDataSprite = worldViewProjectionMatrixSprite;
+}
+
 void Engine::RenewalCBuffer()
 {
 	CreateWorldViewProjectionMatrix();
-	transform.rotate.y += 0.03f;
+	transform.rotate.y += 0.005f;
 }
 
 void Engine::CreateWorldViewProjectionMatrix()
@@ -467,7 +549,7 @@ void Engine::CreateWorldViewProjectionMatrix()
 	Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 	*wvpData = worldMatrix;
 
-
+	
 }
 
 

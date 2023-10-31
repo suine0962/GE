@@ -18,7 +18,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	directXCommon->Initilize(winApp);
 	engine_->Initilize(winApp,directXCommon,texManeger);
 	imguiManeger->Initialize(winApp,directXCommon);
-
+	
 	//ゲームシーン
 	while (true)
 	{

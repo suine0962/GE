@@ -45,6 +45,11 @@ public:
 	void RenewalCBuffer();
 	void CreateWorldViewProjectionMatrix();
 
+	void TextureLoad(const std::string& filePath, DirectXCommon* directX_);
+	void CreateDepthStencilState();
+	void CreateVertexResourceSprite();
+	void CreateTransformationMatrixResourceSprite();
+
 private:
 	WinApp* winApp_ = nullptr;
 	DirectXCommon* directX_ = nullptr;
@@ -52,6 +57,9 @@ private:
 
 	int32_t backBufferWidth_ = 0;
 	int32_t backBufferHedth_ = 0;
+
+	//const std::string& filePath;
+
 
 	IDxcUtils* dxcUtils_ = nullptr;
 	IDxcCompiler3* dxcCompiler_ = nullptr;
@@ -101,7 +109,9 @@ private:
 	ID3D12Resource* wvpResource = nullptr;
 	Matrix4x4* wvpData = nullptr;
 
-	texResourceProperty tex;
+	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSprite_{};
+
+	ID3D12Resource* transformationMatrixResourceSprite = nullptr;
 
 	struct Transform
 	{
@@ -110,6 +120,8 @@ private:
 		Vector3 translate;
 	};
 	Transform transform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
+	Transform transformSprite{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
 	Transform cameraTransform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,-5.0f} };
 	Matrix4x4* tramsformMatrixData = nullptr;
+
 };

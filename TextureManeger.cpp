@@ -126,7 +126,7 @@ texResourceProperty TextureManeger::LoadTexture(const std::string& filePath, Dir
 	
 
 	//textureを読んで転送する
-	DirectX::ScratchImage mipImages = CreateMipImage("DefaultResources/uvChecker.png");
+	DirectX::ScratchImage mipImages = CreateMipImage(filePath);
 	const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
 
 	ID3D12Resource* texResource = CreateTexResource(metadata, directX_);
@@ -152,7 +152,7 @@ texResourceProperty TextureManeger::LoadTexture(const std::string& filePath, Dir
 	//SRVの作成
 	directX_->Getdevice()->CreateShaderResourceView(texResource, &srvDesc_, texSrvHandleCPU);
 
-	texResourceProperty tex;
+	
 
 	tex.Resource = texResource;
 	tex.SrvHandleGPU = texSrvHandleGPU;

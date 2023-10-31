@@ -11,7 +11,7 @@ void DirectXCommon::Initilize(WinApp* winApp, int32_t backBufferWidth,
 	backBufferWidth_ = backBufferWidth;
 	backBufferHedth_ = backBufferHeight;
 
-
+	
 	CreateDebugLayer();
 	CreateFactory();
 	CreateAdapter();
@@ -19,8 +19,16 @@ void DirectXCommon::Initilize(WinApp* winApp, int32_t backBufferWidth,
 	InitializeCommand();
 	CreateSwapChain();
 	CreateRTVDescriptorHeap();
+	dsvDescriptorHeap = CreateDescriptorHeap(device_, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1, false);
+
+	depthStencilResource = CreateDepthStencilTextureResource(device_,
+		winApp_->kWindowWidth, winApp_->kWindowHeight);
+	CreateDepthStencilView();
+
 	CreateFence();
 	
+
+
 }
 
 
@@ -44,6 +52,8 @@ ID3D12DescriptorHeap* DirectXCommon::CreateDescriptorHeap(ID3D12Device* device, 
 	return descriptHeap;
 
 }
+
+
 
 
 
@@ -246,6 +256,58 @@ void DirectXCommon::CreateRTVDescriptorHeap()
 }
 
 
+ID3D12Resource* DirectXCommon::CreateDepthStencilTextureResource(ID3D12Device* device, int32_t width, int32_t height)
+{
+	HRESULT hr = S_FALSE;
+	D3D12_RESOURCE_DESC DepthResourceDesc_{};
+
+	DepthResourceDesc_.Width = width;//Textureの幅
+	DepthResourceDesc_.Height = height;//Textureの動き
+	DepthResourceDesc_.MipLevels = 1;//mipmapの数
+	DepthResourceDesc_.DepthOrArraySize = 1;//奥行or配列textureの配列数
+	DepthResourceDesc_.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;//DepthStencilとして利用可能なフォーマット
+	DepthResourceDesc_.SampleDesc.Count = 1;//サンプリング
+	DepthResourceDesc_.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;//二次元
+	DepthResourceDesc_.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;//Deothstenncilとして使う通知
+
+	//利用するHeapの設定
+	D3D12_HEAP_PROPERTIES DepthProperties_{};
+	DepthProperties_.Type = D3D12_HEAP_TYPE_DEFAULT;//VRAM上に作る
+
+	//深度地のクリア設定
+	D3D12_CLEAR_VALUE depthClearValue_{};
+	depthClearValue_.DepthStencil.Depth = 1.0f;//1.0(最大値)でクリア
+	depthClearValue_.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;//フォーマット。Resourcceと合わせる
+
+	//Resourceの生成
+	ID3D12Resource* DepthResource = nullptr;
+	device->CreateCommittedResource(
+		&DepthProperties_,
+		D3D12_HEAP_FLAG_NONE,
+		&DepthResourceDesc_,
+		D3D12_RESOURCE_STATE_DEPTH_WRITE,
+		&depthClearValue_,
+		IID_PPV_ARGS(&DepthResource));
+	assert(SUCCEEDED(hr));
+
+
+	return DepthResource;
+
+}
+
+
+void DirectXCommon::CreateDepthStencilView()
+{
+	//DSVの設定
+	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
+	dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	//DSVheap上の先頭にDSVを作る
+	device_->CreateDepthStencilView(
+		depthStencilResource,
+		&dsvDesc,
+		dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+}
 
 void DirectXCommon::CreatePreDraw()
 {
@@ -275,6 +337,11 @@ void DirectXCommon::CreatePreDraw()
 	commandList_->ClearRenderTargetView(rtvHandles_[backBufferIndex_], ClearColor_, 0, nullptr);
 
 
+	dsvHandle = dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+
+	commandList_->OMSetRenderTargets(1, &rtvHandles_[backBufferIndex_], false, &dsvHandle);
+
+	commandList_->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 }
 
 void DirectXCommon::PostDraw()
@@ -290,6 +357,8 @@ void DirectXCommon::PostDraw()
 	//今回はRenderTargetからpresentにする
 	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+
+	
 	//TransitionBarrierを張る
 	commandList_->ResourceBarrier(1, &barrier);
 	//コマンドリストの内容を確定させる.全てのコマンドを積んでからcloseすること
@@ -328,6 +397,11 @@ void DirectXCommon::PostDraw()
 	assert(SUCCEEDED(result));
 
 }
+
+
+
+
+
 void DirectXCommon::CreateFence()
 {
 
@@ -378,6 +452,7 @@ void  DirectXCommon::CreateRelease()
 	dxgiFactory_->Release();
 	Getdevice()->Release();
 	GetcommandList()->Release();
+
 #ifdef _DEBUG
 	debugController_->Release();
 #endif // _DEBUG

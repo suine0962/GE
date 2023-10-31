@@ -1,7 +1,9 @@
 #pragma once
 #include<cassert>
 #include<cmath>
+#include"Vector2.h"
 #include"Vector3.h"
+#include"Vector4.h"
 #include"Matrix4x4.h"
 
 Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2);

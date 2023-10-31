@@ -1,8 +1,6 @@
 #pragma once
 #include "externals/DirectXTex/DirectXTex.h"
 #include"externals/DirectXTex/d3dx12.h"
-//#include"../externals/DirectXTex/d3dx12.h"
-//#include"../externals/DirectXTex/DirectXTex.h"
 
 #include<vector>
 #include"WinApp.h"
@@ -10,6 +8,7 @@
 
 struct texResourceProperty
 {
+
 	D3D12_GPU_DESCRIPTOR_HANDLE SrvHandleGPU;
 	ID3D12Resource* Resource;
 
@@ -32,10 +31,12 @@ public:
 	D3D12_HEAP_PROPERTIES SettingHeap();
 	ID3D12Resource* CreateTexResource(const DirectX::TexMetadata& metadata, DirectXCommon* directX_);
 
-	
 	texResourceProperty LoadTexture(const std::string& filePath, DirectXCommon*directX_);
 	
+	 const texResourceProperty& Gettex() { return tex; };
 private:
+	texResourceProperty tex{};
+
 };
 
 

@@ -4,6 +4,7 @@
 #include"WorldTransform.h"
 #include"DirectXCommon.h"
 #include"Engine.h"
+#include"CreateResource.h"
 
 enum SpriteMode
 {
@@ -22,14 +23,14 @@ struct BoxPosition
 
 
 
-class Sprite
+class Sprite:CreateResource
 {
 public:
 
 	Sprite();
 	~Sprite();
 
-	void Initilize(DirectXCommon*directX,Engine*engine, Vector2 leftpos, float size, WorldTransform worldTransform, texResourceProperty texResource, const SpriteMode mode);
+	void Initilize(DirectXCommon*directX,CreateResource*CResource, Vector2 leftpos, float size, WorldTransform worldTransform, texResourceProperty texResource, const SpriteMode mode);
 
 	void TransforMatrix(Matrix4x4 m);
 
@@ -37,19 +38,19 @@ public:
 
 	Matrix4x4 GetWorldTransform() { return worldTransform_.matWorld_; };
 
-	void CreateVertexResourceSprite();
+	void Draw();
 
 
 private:
 
 
-	void CommandCall();
+	void CommandCall(const int Num);
 
 	void Relese();
 
 
 	DirectXCommon* directX_ = nullptr;
-	Engine* engine_ = nullptr;
+	CreateResource* CResource_ = nullptr;
 	struct VertexData {
 		Vector4 position;
 		Vector2 texcoord;
@@ -62,12 +63,14 @@ private:
 
 	WorldTransform worldTransform_;
 
+	ResourcePropety resource_;
+
 	texResourceProperty tex;
 
 	BoxPosition pos;
 
-	SpriteMode mode;
+	SpriteMode mode_;
 
-
+	Vector4 color_ = { 1,1,1,1 };
 };
 

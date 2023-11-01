@@ -4,6 +4,11 @@
 #include"Engine.h"
 #include"imguiManeger.h"
 #include"TextureManeger.h"
+
+//まだ理解が浅いけど球体やスプライトをクラス化するか
+
+
+
 //Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//出力ウィンドウへの文字入力

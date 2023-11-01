@@ -1,7 +1,9 @@
 #pragma once
 #include "TextureManeger.h"
-#include "Vector4.h"
-#include "Vector2.h"
+#include"Mymath.h"
+#include"WorldTransform.h"
+#include"DirectXCommon.h"
+#include"Engine.h"
 
 enum SpriteMode
 {
@@ -22,17 +24,49 @@ struct BoxPosition
 
 class Sprite
 {
+public:
+
 	Sprite();
 	~Sprite();
 
-	void Initilize();
+	void Initilize(DirectXCommon*directX,Engine*engine, Vector2 leftpos, float size, WorldTransform worldTransform, texResourceProperty texResource, const SpriteMode mode);
 
-	void TransforMatrix();
+	void TransforMatrix(Matrix4x4 m);
+
+	void SetTexPropety(texResourceProperty NewTex);
+
+	Matrix4x4 GetWorldTransform() { return worldTransform_.matWorld_; };
+
+	void CreateVertexResourceSprite();
 
 
-	void Updata();
+private:
 
-	void Draw();
+
+	void CommandCall();
+
+	void Relese();
+
+
+	DirectXCommon* directX_ = nullptr;
+	Engine* engine_ = nullptr;
+	struct VertexData {
+		Vector4 position;
+		Vector2 texcoord;
+	};
+
+
+	D3D12_VERTEX_BUFFER_VIEW CreateBufferViewSprite_{};
+
+	ID3D12Resource* CreateBufferResource = nullptr;
+
+	WorldTransform worldTransform_;
+
+	texResourceProperty tex;
+
+	BoxPosition pos;
+
+	SpriteMode mode;
 
 
 };

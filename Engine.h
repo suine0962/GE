@@ -24,6 +24,7 @@ public:
 		IDxcUtils* dxcUtils,
 		IDxcCompiler3* dxcCompiler,
 		IDxcIncludeHandler* IncludeHandler);
+	ID3D12Resource* GetCreateBufferResource() { return CreateBufferResource(directX_->Getdevice(),sizeof(VertexData)*6); };
 
 	ID3D12Resource* CreateBufferResource(ID3D12Device* device, size_t SizeInBytes);
 	ID3D12Resource* CreateMateialResource();

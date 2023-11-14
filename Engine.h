@@ -5,13 +5,14 @@
 #include"TextureManeger.h"
 #include"Vector4.h"
 #include"Vector2.h"
+#include"Sphere.h"
 #pragma comment(lib,"dxcompiler.lib")
 
 
 class Engine
 {
 public:
-	void Initilize(WinApp* winApp, DirectXCommon* directX,TextureManeger*texManeger, int32_t backBufferWidth = WinApp::kWindowWidth,
+	void Initilize(WinApp* winApp, DirectXCommon* directX,TextureManeger*texManeger, Sphere*sphere,int32_t backBufferWidth = WinApp::kWindowWidth,
 		int32_t backBufferHeight = WinApp::kWindowHeight);
 public:
 	void Log(const std::string& message);
@@ -50,6 +51,8 @@ public:
 	void CreateWorldViewProjectionMatrix();
 
 	void TextureLoad(const std::string& filePath, DirectXCommon* directX_);
+	void sphereDraw();
+
 	void CreateDepthStencilState();
 	void CreateVertexResourceSprite();
 	void CreateTransformationMatrixResourceSprite();
@@ -58,6 +61,7 @@ private:
 	WinApp* winApp_ = nullptr;
 	DirectXCommon* directX_ = nullptr;
 	TextureManeger* texManeger_ = nullptr;
+	Sphere* sphere_ = nullptr;
 
 	int32_t backBufferWidth_ = 0;
 	int32_t backBufferHedth_ = 0;

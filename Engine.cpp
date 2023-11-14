@@ -1,12 +1,13 @@
 #include"Engine.h"
 
 
-void Engine::Initilize(WinApp* winApp, DirectXCommon* directX,TextureManeger*texManeger, int32_t backBufferWidth,
+void Engine::Initilize(WinApp* winApp, DirectXCommon* directX,TextureManeger*texManeger,Sphere*sphere,int32_t backBufferWidth,
 	int32_t backBufferHeight)
 {
 	assert(winApp);
 	assert(directX);
 	assert(texManeger);
+	assert(sphere);
 
 	assert(4 <= backBufferWidth && backBufferWidth_ <= 4096);
 	assert(4 <= backBufferHeight && backBufferHedth_ <= 4096);
@@ -14,6 +15,7 @@ void Engine::Initilize(WinApp* winApp, DirectXCommon* directX,TextureManeger*tex
 	winApp_ = winApp;
 	directX_ = directX;
 	texManeger_ = texManeger;
+	sphere_ = sphere;
 	//winApp_->CreateGameWindow(L"CG2", 1280, 720);
 
 	CreateDxcCommpiler();
@@ -32,6 +34,7 @@ void Engine::Initilize(WinApp* winApp, DirectXCommon* directX,TextureManeger*tex
 	CreateVertexResourceSprite();
 	CreateTransformationMatrixResourceSprite();
 	TextureLoad("DefaultResources/uvChecker.png", directX_);
+	sphereDraw();
 }
 
 
@@ -498,6 +501,12 @@ void Engine::TextureLoad(const std::string& filePath, DirectXCommon* directX_)
 {
 
 	texManeger_->LoadTexture(filePath,directX_);
+
+}
+
+void Engine::sphereDraw()
+{
+	sphere_->SphereDraw();
 
 }
 

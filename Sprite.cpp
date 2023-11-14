@@ -1,8 +1,10 @@
 #include "Sprite.h"
-
-void Sprite::Initilize(DirectXCommon*directX, CreateResource* CResource,Vector2 leftpos,
-	float size, WorldTransform worldTransform, texResourceProperty texResource, const SpriteMode mode)
+	
+void Sprite::Initilize(DirectXCommon* directX, CreateResource* CResource,
+	Engine* engine, Vector2 leftpos, float size, WorldTransform worldTransform,
+	texResourceProperty texResource, const SpriteMode mode)
 {
+
 	assert(directX);
 	assert(CResource);
 
@@ -25,18 +27,17 @@ void Sprite::Initilize(DirectXCommon*directX, CreateResource* CResource,Vector2 
 
 
 		mode_ = mode;
-		resource_ = CreateResource(TriangleNumVertex);
+		resource_ = CResource_->GetVertexDataCreateResource(TriangleNumVertex);
 
 		break;
 
 	case Box:
 
-		resource_ = CreateResource(BoxNumVertex);
+		resource_ = CResource_->GetVertexDataCreateResource(BoxNumVertex);
 		mode_ = mode;
 
 		break;
 	}
-	
 }
 
 void Sprite::TransforMatrix(Matrix4x4 m)
@@ -51,9 +52,6 @@ void Sprite::SetTexPropety(texResourceProperty NewTex)
 
 void Sprite::Draw()
 {
-	VertexData* vertexData;
-	Vector4* MaterialData;
-	Matrix4x4* wvpData;
 
 	const int TriangleNum = 3;
 	const int BoxNum = 6;
@@ -80,7 +78,7 @@ void Sprite::Draw()
 		*MaterialData = color_;
 	
 		//行列の変換
-		worldTransform_.matWorld_;//ここにカメラのデータを入れる
+		worldTransform_.matWorld_ = camera_->GetworldOthographicMatrix(worldTransform_.matWorld_);//ここにカメラのデータを入れる
 
 		*wvpData = worldTransform_.matWorld_;
 
@@ -119,7 +117,7 @@ void Sprite::Draw()
 		*MaterialData = color_;
 
 		//行列の変換
-		worldTransform_.matWorld_;//ここにカメラのデータを入れる
+		worldTransform_.matWorld_= camera_->GetworldOthographicMatrix(worldTransform_.matWorld_);
 
 		*wvpData = worldTransform_.matWorld_;
 
@@ -130,44 +128,102 @@ void Sprite::Draw()
 
 }
 
+void Sprite::Release()
+{
+	Sprite::Releace(resource_.Material);
+	Sprite::Releace(resource_.Vertex);
+	Sprite::Releace(resource_.wvpResource);
+}
 
 
-//void Sprite::CreateVertexResourceSprite()
-//{
-//		//sprite用の頂点リソースを作る
-//	ID3D12Resource* vertexResourceSprite = Resource_->CreateBufferResource()
-//
-//		//頂点バッファビューを作る
-//
-//		//リソースの先頭のアドレスから使う
-//		CreateBufferViewSprite_.BufferLocation = vertexResourceSprite->GetGPUVirtualAddress();
-//		//使用するリソースのサイズは頂点６つ分のサイス
-//		CreateBufferViewSprite_.SizeInBytes = sizeof(VertexData) * 6;
-//		//１頂点あたりのサイズ
-//		CreateBufferViewSprite_.StrideInBytes = sizeof(VertexData);
-//
-//		VertexData* vertexDataSprite = nullptr;
-//		vertexResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&vertexDataSprite));
-//
-//		//一枚目の三角形
-//		//左下
-//		vertexDataSprite[0].position = { 0.0f,360.0f,0.0f,1.0f };
-//		vertexDataSprite[0].texcoord = { 0.0f,1.0f };
-//		//左上
-//		vertexDataSprite[1].position = { 0.0f,0.0f,0.0f,1.0f };
-//		vertexDataSprite[1].texcoord = { 0.0f,0.0f };
-//		//右下
-//		vertexDataSprite[2].position = { 640.0f,360.0f,0.0f,1.0f };
-//		vertexDataSprite[2].texcoord = { 1.0f,1.0f };
-//
-//		//二枚目の三角形
-//		//左上
-//		vertexDataSprite[3].position = { 0.0f,0.0f,0.0f,1.0f };
-//		vertexDataSprite[3].texcoord = { 0.0f,0.0f };
-//		//左上
-//		vertexDataSprite[4].position = { 640.0f,0.0f,0.0f,1.0f, };
-//		vertexDataSprite[4].texcoord = { 1.0f,0.0f };
-//		//右下
-//		vertexDataSprite[5].position = { 640.0f,360.0f,0.0f,1.0f };
-//		vertexDataSprite[5].texcoord = { 1.0f,1.0f };
-//}
+void Sprite::Releace(ID3D12Resource* resource)
+{
+	resource->Release();
+}
+
+void Sprite::CommandCall(const int Num)
+{
+	PSOProperty PSO = pso_->GetPSO().sprite;
+
+	directX_->GetcommandList()->SetGraphicsRootSignature(PSO.rootSignature);
+	directX_->GetcommandList()->SetPipelineState(PSO.GrahicsPipeLineState);
+	//形状を設定
+	directX_->GetcommandList()->IASetVertexBuffers(0, 1, &resource_.vertexBufferView_);
+
+	//wvp用のCBufferの場所を設定
+	directX_->GetcommandList()->SetGraphicsRootConstantBufferView(1, resource_.wvpResource->GetGPUVirtualAddress());
+
+	//マテリアルCBufferの場所を設定
+	directX_->GetcommandList()->SetGraphicsRootConstantBufferView(0, resource_.Material->GetGPUVirtualAddress());
+
+	//
+	directX_->GetcommandList()->SetGraphicsRootDescriptorTable(2, tex.SrvHandleGPU);
+
+	//描画(ドローコール)
+	directX_->GetcommandList()->DrawInstanced(Num, 1, 0, 0);
+
+}
+
+
+ResourcePropety Sprite::CreateResourceSprite(const int Num)
+{
+	ResourcePropety result;
+
+	result.Vertex = CreatBufferResourceSprite(sizeof(VertexData) * Num);
+	result.Material = CreatBufferResourceSprite(sizeof(Vector4));
+	result.wvpResource = CreatBufferResourceSprite(sizeof(Matrix4x4));
+	result.vertexBufferView_ = CreateBufferViewSprite(sizeof(VertexData) * Num, result.Vertex, Num);
+
+	return result;
+}
+
+
+ID3D12Resource* Sprite::CreatBufferResourceSprite(size_t sizeInbytes)
+{
+	ID3D12Resource* RssultResource = nullptr;
+	//頂点リソース用のヒープの設定
+	D3D12_HEAP_PROPERTIES uploadHeapProperties{};
+
+	uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+	//頂点リソースの設定
+	D3D12_RESOURCE_DESC ResouceDesc{};
+	//バッファリソース,テクスチャまたは別の設定する
+	ResouceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	ResouceDesc.Width = sizeInbytes;
+
+	//バッファの場合はこれらを１にするのがきまり
+	ResouceDesc.Height = 1;
+	ResouceDesc.DepthOrArraySize = 1;
+	ResouceDesc.MipLevels = 1;
+	ResouceDesc.SampleDesc.Count = 1;
+	//バッファの場合はこれにするきまり
+	ResouceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	//実際に頂点リソースを作る
+	ID3D12Resource* Resource = nullptr;
+	HRESULT hr = directX_->Getdevice()->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE,
+		&ResouceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
+		IID_PPV_ARGS(&Resource));
+	assert(SUCCEEDED(hr));
+
+
+	return RssultResource;
+
+
+}
+
+D3D12_VERTEX_BUFFER_VIEW Sprite::CreateBufferViewSprite(size_t sizeInbytes, ID3D12Resource* Resource, const int size)
+{
+
+	D3D12_VERTEX_BUFFER_VIEW resultBufferViewSprite = {};
+
+	resultBufferViewSprite.BufferLocation = Resource->GetGPUVirtualAddress();
+
+	//使用するリソースのサイズは頂点3つ分のサイズ
+	resultBufferViewSprite.SizeInBytes = UINT(sizeInbytes);
+
+	//1頂点あたりのサイズ
+	resultBufferViewSprite.StrideInBytes = UINT(sizeInbytes / size);
+
+	return resultBufferViewSprite;
+
+}

@@ -4,7 +4,7 @@
 #include"Engine.h"
 #include"imguiManeger.h"
 #include"TextureManeger.h"
-
+#include"Sphere.h"
 //まだ理解が浅いけど球体やスプライトをクラス化するか
 
 
@@ -18,10 +18,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Engine* engine_ = new Engine();
 	ImGuiManager* imguiManeger = new ImGuiManager();
 	TextureManeger* texManeger = new TextureManeger();
+	Sphere* sphere = new Sphere();
 
 	winApp->CreateGameWindow();
 	directXCommon->Initilize(winApp);
-	engine_->Initilize(winApp,directXCommon,texManeger);
+	engine_->Initilize(winApp,directXCommon,texManeger,sphere);
 	imguiManeger->Initialize(winApp,directXCommon);
 	
 	//ゲームシーン

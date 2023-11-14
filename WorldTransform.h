@@ -7,7 +7,7 @@ public:
 	// X,Y,Z軸回りのローカル回転角
 	Vector3 rotation_ = { 0, 0, 0 };
 	// ローカル座標
-	Vector3 translation_ = { 0, 0, 0 };
+	Vector3 transform_ = { 0, 0, 0 };
 	// ローカル → ワールド変換行列
 	Matrix4x4 matWorld_;
 	

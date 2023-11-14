@@ -5,6 +5,14 @@
 #include"Vector3.h"
 #include"Vector4.h"
 #include"Matrix4x4.h"
+#include"Matrix3x3.h"
+
+struct Transform
+{
+	Vector3 Scale;
+	Vector3 rotate;
+	Vector3 translate;
+};
 
 Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2);
 
@@ -20,4 +28,4 @@ Matrix4x4 MakePerspectiveFovMatrix(float fovY, float aspectRatio, float nearClip
 
 Matrix4x4 MakeOrthographicMatrix(float left, float top, float right, float bottom, float nearClip, float farClip);
 
-Vector3 Transform(const Vector3& vector, const Matrix4x4& matrix);
+Vector3 VectorTransform(const Vector3& vector, const Matrix4x4& matrix);

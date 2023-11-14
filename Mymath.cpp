@@ -1,5 +1,21 @@
 #include "Mymath.h"
 
+
+Vector2 Transform(Vector2 v, Matrix3x3 matrix)
+{
+	Vector2 result;
+	result.x = v.x * matrix.m[0][0] + v.y * matrix.m[1][0] + 1.0f * matrix.m[2][0];
+	result.y = v.x * matrix.m[0][1] + v.y * matrix.m[1][1] + 1.0f * matrix.m[2][1];
+	float w = v.x * matrix.m[0][2] + v.y * matrix.m[1][2] + 1.0f * matrix.m[2][2];
+
+	assert(w != 0.0f);
+	result.x /= w;
+	result.y /= w;
+	return result;
+}
+
+
+
 Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2) {
 	Matrix4x4 result;
 
@@ -452,7 +468,7 @@ Matrix4x4 MakeOrthographicMatrix(float left, float top, float right, float botto
 
 }
 
-Vector3 Transform(const Vector3& vector, const Matrix4x4& matrix)
+Vector3 VectorTransform(const Vector3& vector, const Matrix4x4& matrix)
 {
 	Vector3 result;
 

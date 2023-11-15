@@ -1,49 +1,123 @@
 #include<Windows.h>
 #include "WinApp.h"
 #include"DirectXCommon.h"
-#include"Engine.h"
 #include"imguiManeger.h"
 #include"TextureManeger.h"
 #include"Sphere.h"
-//まだ理解が浅いけど球体やスプライトをクラス化するか
-
+#include"suine.h"
 
 
 //Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//出力ウィンドウへの文字入力
 
+	const int32_t	KCientwidth = 1280;
+	const int32_t	KCientHeight = 720;
+
+	MSG msg{};
+
+	Suine* suine = new Suine();
 	WinApp* winApp = new WinApp();
 	DirectXCommon* directXCommon = new DirectXCommon();
-	Engine* engine_ = new Engine();
 	ImGuiManager* imguiManeger = new ImGuiManager();
 	TextureManeger* texManeger = new TextureManeger();
-	Sphere* sphere = new Sphere();
+	Camera* camera = new Camera();
 
-	winApp->CreateGameWindow();
-	directXCommon->Initilize(winApp);
-	engine_->Initilize(winApp,directXCommon,texManeger,sphere);
-	imguiManeger->Initialize(winApp,directXCommon);
-	
+
+	suine->Initilize();
+
+	Transform cameraTransform
+	{
+		cameraTransform.Scale = {1,1,1},
+		cameraTransform.rotate = {0,0,-0.5},
+		cameraTransform.translate = {0,0,0}
+	};
+
+	WorldTransform worldTransform[3];
+
+	worldTransform[0].Initilize();
+	worldTransform[1].Initilize();
+	worldTransform[2].Initilize();
+
+	Model* model = new Model();
+
+	Vector4 pos = { 0,0,0,-1 };
+
+	float size = 1;
+
+	texResourceProperty UVtex =
+		texManeger->LoadTexture("DefaultResources/uvChecker.png");
+	texResourceProperty Monstertex =
+		texManeger->LoadTexture("DefaultResources/monsterBall.png");
+
+	model->Initilize(pos, size, worldTransform[0], UVtex, sphere);
+
+	Sprite* sprite = new Sprite();
+
+	sprite->Initilize({ 0,0 }, 320, worldTransform[1], UVtex, Box);
+
+	bool texFlag = false;
+
+
 	//ゲームシーン
 	while (true)
 	{
-		imguiManeger->BeginFlame(directXCommon);
-		directXCommon->CreatePreDraw();
-		engine_->Draw();
-		imguiManeger->EndFlame(directXCommon);
-		directXCommon->PostDraw();
-		engine_->RenewalCBuffer();
-
-		if (winApp->ProcessMessage() == true)
+		if (PeekMessage(&msg,NULL,0,0,PM_REMOVE))
 		{
-			break;
+			suine->WinMSG(msg);
+
 		}
+		suine->BeginFrame(KCientwidth, KCientHeight);
+
+		ImGui::Begin("sphere");
+		ImGui::SliderFloat4("Trans", &worldTransform[0].transform_.x, 10.0f, -10.0f);
+		ImGui::SliderFloat4("rotate", &worldTransform[0].rotation_.x, 10.0f, -10.0f);
+		ImGui::Checkbox("tex", &texFlag);
+		ImGui::End();
+
+		if (texFlag)
+		{
+			model->SetTexPropety(Monstertex);
+
+		}
+		else
+		{
+			model->SetTexPropety(UVtex);
+		}
+
+		Matrix4x4 SphereWorldMatrix = MakeAffineMatrix(
+			worldTransform[0].scale_,
+			worldTransform[0].rotation_,
+			worldTransform[0].transform_);
+
+		SphereWorldMatrix = camera->worldViewProjectionMatrix(SphereWorldMatrix);
+
+		model->TransferMatrix(SphereWorldMatrix);
+
+		model->Draw();
+
+		ImGui::Begin("sprite");
+		ImGui::SliderFloat4("Trans", &worldTransform[1].transform_.x, 10.0f, -10.0f);
+		ImGui::SliderFloat4("rotate", &worldTransform[1].rotation_.x, 10.0f, -10.0f);
+		ImGui::Checkbox("tex", &texFlag);
+		ImGui::End();
+
+		Matrix4x4 SpriteWorldMatrix = MakeAffineMatrix(
+			worldTransform[0].scale_,
+			worldTransform[0].rotation_,
+			worldTransform[0].transform_);
+
+		SpriteWorldMatrix = camera->worldViewProjectionMatrix(SpriteWorldMatrix);
+
+		sprite->TransforMatrix(SpriteWorldMatrix);
+
+		sprite->Draw();
+
+		suine->EndFrame();
 	}
 
-	directXCommon->CreateRelease();
-	engine_->CreateRelease();
-	directXCommon->CreateReportLive();
+	UVtex = texManeger->Release(UVtex);
+	Monstertex = texManeger->Release(Monstertex);
 	
 	return 0;
 }

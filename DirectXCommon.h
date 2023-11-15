@@ -90,7 +90,7 @@ public:
 
 	void CreatePreDraw();
 
-	void CreateFactory();
+	void CreateFactory();//
 
 	void CreateAdapter();
 

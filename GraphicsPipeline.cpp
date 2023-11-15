@@ -2,18 +2,23 @@
 
 void GraphicsPipeline::Initilize()
 {
-	dxcCreate();
+	DXCCreate();
 	DfIncludeHandlerSetting();
 }
 
 void GraphicsPipeline::Finalize()
 {
+	PSORelese(pso_.shape);
+	PSORelese(pso_.sprite);
+
+	ShaderRelese(shader_.shape);
+	ShaderRelese(shader_.sprite);
 
 }
 
 void GraphicsPipeline::ShaderCompile()
 {
-	ShaderMode shape, sprite;
+	ShaderMode shape, sprite{};
 
 	shape.vertexBlob = CreateCompileShader(
 		L"./Object3d.VS.hlsl",
@@ -31,6 +36,9 @@ void GraphicsPipeline::ShaderCompile()
 		L"./Object3d.PS.hlsl",
 		L"ps_6_0");
 
+	shader_.shape = shape;
+	shader_.sprite = sprite;
+
 }
 
 void GraphicsPipeline::PSOCreate()
@@ -47,21 +55,21 @@ void GraphicsPipeline::Log(const std::string& message)
 
 
 
-void GraphicsPipeline::dxcCreate()
+void GraphicsPipeline::DXCCreate()
 {
-	HRESULT hr;
-	hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxc_.dxcUtils));
+	HRESULT hr = S_FALSE;
+	hr =DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxc_.Utils));
 	assert(SUCCEEDED(hr));
 
-	hr = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&dxc_.dxcCompiler));
+	hr = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&dxc_.Compiler));
 	assert(SUCCEEDED(hr));
 
 }
 
 void GraphicsPipeline::DfIncludeHandlerSetting()
 {
-	HRESULT hr;
-	GraphicsPipeline::dxc_.dxcUtils->CreateDefaultIncludeHandler(&includeHandler_);
+	HRESULT hr = S_FALSE;
+	dxc_.Utils->CreateDefaultIncludeHandler(&includeHandler_);
 	assert(SUCCEEDED(hr));
 
 }
@@ -74,10 +82,12 @@ void GraphicsPipeline::ShapePSO()
 	PSOProperty shapePSO;
 	ShaderMode shader = shader_.shape;
 
+	//RootSIgnature
 	D3D12_ROOT_SIGNATURE_DESC descriptionRootsignature{};
 
 	descriptionRootsignature.Flags =
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+	//
 
 	D3D12_ROOT_PARAMETER rootParameters[2] = {};
 
@@ -93,6 +103,8 @@ void GraphicsPipeline::ShapePSO()
 	descriptionRootsignature.pParameters = rootParameters;//ルートパラメータ配列へのポインタ
 	descriptionRootsignature.NumParameters = _countof(rootParameters);//配列の長さ
 
+
+	//シリアライズしてバイナリする
 	hr = D3D12SerializeRootSignature(&descriptionRootsignature,
 		D3D_ROOT_SIGNATURE_VERSION_1, &shapePSO.signatureBlob,&shapePSO.errorBlob);
 	if (FAILED(hr))
@@ -100,6 +112,7 @@ void GraphicsPipeline::ShapePSO()
 		Log(reinterpret_cast<char*>(shapePSO.signatureBlob->GetBufferPointer()));
 		assert(false);
 	}
+
 	//バイナリをもとに生成
 
 	hr = directX_->Getdevice()->CreateRootSignature(0,shapePSO.signatureBlob ->GetBufferPointer(),
@@ -110,7 +123,7 @@ void GraphicsPipeline::ShapePSO()
 
 	//InputLayOut
 
-	D3D12_INPUT_ELEMENT_DESC inputElementDesc_[2]{};
+	D3D12_INPUT_ELEMENT_DESC inputElementDesc_[1]{};
 
 	inputElementDesc_[0].SemanticName = "POSITION";
 	inputElementDesc_[0].SemanticIndex = 0;
@@ -129,6 +142,7 @@ void GraphicsPipeline::ShapePSO()
 		D3D12_COLOR_WRITE_ENABLE_ALL;
 
 
+
 	//RASTERIZER
 	D3D12_RASTERIZER_DESC rasterizerDesc_{};
 	//裏面を表示しない
@@ -136,13 +150,12 @@ void GraphicsPipeline::ShapePSO()
 	//三角形の中を塗りつぶす
 	rasterizerDesc_.FillMode = D3D12_FILL_MODE_SOLID;
 
-
-	//
+	//depth
 	D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
 	depthStencilDesc.DepthEnable = true;
 	depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 	depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-
+	
 	//PSOの生成
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
@@ -340,8 +353,8 @@ void GraphicsPipeline::PSORelese(PSOProperty pso)
 IDxcBlob* GraphicsPipeline::CreateCompileShader(
 	const std::wstring& filePath, const wchar_t* profile)
 {
-	IDxcUtils* dxcUtils = dxc_.dxcUtils;
-	IDxcCompiler3* dxcCompiler = dxc_.dxcCompiler;
+	IDxcUtils* dxcUtils = dxc_.Utils;
+	IDxcCompiler3* dxcCompiler = dxc_.Compiler;
 	IDxcIncludeHandler* includeHandler = includeHandler_;
 
 	//1HLSLファイルを読む
@@ -354,7 +367,7 @@ IDxcBlob* GraphicsPipeline::CreateCompileShader(
 	//読めなかったら止める
 	assert(SUCCEEDED(hr));
 	//読み込んだファイルの内容を設定する
-	DxcBuffer shaderSourceBuffer;
+	DxcBuffer shaderSourceBuffer{};
 	shaderSourceBuffer.Ptr = shaderSource->GetBufferPointer();
 	shaderSourceBuffer.Size = shaderSource->GetBufferSize();
 	shaderSourceBuffer.Encoding = DXC_CP_UTF8;

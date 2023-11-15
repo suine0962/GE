@@ -96,8 +96,10 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="ComvertString.cpp" />
     <ClCompile Include="CreateResource.cpp" />
-    <ClCompile Include="DirectXCommon.cpp" />
-    <ClCompile Include="Engine.cpp" />
+    <ClCompile Include="DirectXCommon.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="externals\imgui\imgui.cpp" />
     <ClCompile Include="externals\imgui\imgui_demo.cpp" />
     <ClCompile Include="externals\imgui\imgui_draw.cpp" />
@@ -107,10 +109,13 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="externals\imgui\imgui_widgets.cpp" />
     <ClCompile Include="GraphicsPipeline.cpp" />
     <ClCompile Include="ImguiManeger.cpp" />
+    <ClCompile Include="IModelState.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Model.cpp" />
     <ClCompile Include="Sphere.cpp" />
     <ClCompile Include="Mymath.cpp" />
     <ClCompile Include="Sprite.cpp" />
+    <ClCompile Include="Suine.cpp" />
     <ClCompile Include="TextureManeger.cpp" />
     <ClCompile Include="ViewProjection.cpp" />
     <ClCompile Include="WinApp.cpp" />
@@ -121,7 +126,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="ComvertString.h" />
     <ClInclude Include="CreateResource.h" />
     <ClInclude Include="DirectXCommon.h" />
-    <ClInclude Include="Engine.h" />
     <ClInclude Include="externals\imgui\imconfig.h" />
     <ClInclude Include="externals\imgui\imgui.h" />
     <ClInclude Include="externals\imgui\imgui_impl_dx12.h" />
@@ -132,11 +136,14 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="externals\imgui\imstb_truetype.h" />
     <ClInclude Include="GraphicsPipeline.h" />
     <ClInclude Include="imguiManeger.h" />
+    <ClInclude Include="IModelState.h" />
     <ClInclude Include="Matrix3x3.h" />
     <ClInclude Include="Matrix4x4.h" />
+    <ClInclude Include="Model.h" />
     <ClInclude Include="Sphere.h" />
     <ClInclude Include="Mymath.h" />
     <ClInclude Include="Sprite.h" />
+    <ClInclude Include="Suine.h" />
     <ClInclude Include="TextureManeger.h" />
     <ClInclude Include="Vector2.h" />
     <ClInclude Include="Vector3.h" />

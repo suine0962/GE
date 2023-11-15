@@ -27,8 +27,8 @@ struct PSO {
 };
 
 struct DXCProperty {
-	IDxcUtils* dxcUtils;
-	IDxcCompiler3* dxcCompiler;
+	IDxcUtils* Utils;
+	IDxcCompiler3* Compiler;
 };
 
 
@@ -47,6 +47,7 @@ public:
 
 	void Log(const std::string& message);
 
+	
 private:
 	IDxcBlob* CreateCompileShader(//compileするshaderファイルへのパス
 		const std::wstring& filePath,
@@ -54,7 +55,7 @@ private:
 		const wchar_t* profile
 	);
 
-	void dxcCreate();//
+	void DXCCreate();
 
 	void DfIncludeHandlerSetting();
 
@@ -75,5 +76,6 @@ private:
 	PSO pso_ = {};
 
 	DirectXCommon* directX_ = nullptr;
+
 };
 

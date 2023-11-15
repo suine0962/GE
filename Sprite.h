@@ -3,7 +3,6 @@
 #include"Mymath.h"
 #include"WorldTransform.h"
 #include"DirectXCommon.h"
-#include"Engine.h"
 #include"CreateResource.h"
 #include"Camera.h"
 #include"GraphicsPipeline.h"
@@ -25,14 +24,11 @@ struct BoxPosition
 
 
 
-class Sprite:CreateResource
+class Sprite
 {
 public:
 
-	Sprite();
-	~Sprite();
-
-	void Initilize(DirectXCommon*directX,CreateResource*CResource,Engine*engine, Vector2 leftpos, float size,
+	void Initilize(Vector2 leftpos, float size,
 		WorldTransform worldTransform, texResourceProperty texResource, const SpriteMode mode);
 
 	void TransforMatrix(Matrix4x4 m);
@@ -67,7 +63,7 @@ private:
 
 	ID3D12Resource* CreatBufferResourceSprite(size_t sizeInbytes);
 
-	WorldTransform worldTransform_;
+	WorldTransform worldTransform_{};
 
 	ResourcePropety CreateResourceSprite(const int Num);
 
@@ -75,7 +71,7 @@ private:
 
 	texResourceProperty tex;
 
-	BoxPosition pos;
+	BoxPosition pos{};
 
 	SpriteMode mode_;
 
@@ -83,10 +79,8 @@ private:
 
 	Camera* camera_ = nullptr;
 
-	Engine* engine_ = nullptr;
-
-	VertexData* vertexData;
-	Vector4* MaterialData;
-	Matrix4x4* wvpData;
+	VertexData* vertexData{};
+	Vector4* MaterialData{};
+	Matrix4x4* wvpData{};
 };
 

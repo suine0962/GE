@@ -1,15 +1,9 @@
 #include "Sprite.h"
 	
-void Sprite::Initilize(DirectXCommon* directX, CreateResource* CResource,
-	Engine* engine, Vector2 leftpos, float size, WorldTransform worldTransform,
+void Sprite::Initilize(
+	Vector2 leftpos, float size, WorldTransform worldTransform,
 	texResourceProperty texResource, const SpriteMode mode)
 {
-
-	assert(directX);
-	assert(CResource);
-
-	directX_ = directX;
-	CResource_ = CResource;
 	worldTransform_ = worldTransform;
 	tex = texResource;
 

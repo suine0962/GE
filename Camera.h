@@ -28,8 +28,8 @@ public:
 	Matrix4x4 worldOthographicMatrix(Matrix4x4 matrix);
 private:
 	WinApp* winApp_ = nullptr;
-	ViewProjection viewProjection;
-	Transform CameraTransform;
-	Matrix4x4 matrix;
+	ViewProjection viewProjection{};
+	Transform CameraTransform{};
+	Matrix4x4 matrix{};
 };
 

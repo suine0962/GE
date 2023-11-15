@@ -1,22 +1,17 @@
 #include "Sphere.h"
 
-void Sphere::Initilize(DirectXCommon* directX, CreateResource* createResource,Vector4 pos, float size, texResourceProperty tex)
+void Sphere::Initilize(Vector4 pos, float size, WorldTransform worldTransform, texResourceProperty tex)
 {
-	assert(directX);
-	assert(createResource);
+	resource_ = CResource_->GetVertexDataCreateResource(VertexNum * VertexNum * 6);
 
-	directX_ = directX;
-	createResource_ = createResource;
-
-	resource_ = createResource_->GetVertexDataCreateResource(VertexNum * VertexNum * 6);
 	centerPos_ = pos;
-	radius_ = size;
+	size_ = size;
 	tex_ = tex;
 
 }
 
 
-void Sphere::SphereDraw()
+void Sphere::Draw()
 {
 
 	VertexData* vertexData = nullptr;
@@ -52,27 +47,27 @@ void Sphere::SphereDraw()
 				//左上(点B)が原点
 				//abc
 				//資料通りだとここは点a(左下)
-				vertexData[start].position.x = radius_ * (cos(lat) * cos(lon));
-				vertexData[start].position.y = radius_ * (sin(lat));
-				vertexData[start].position.z = radius_ * (cos(lat) * sin(lon));
+				vertexData[start].position.x = size_ * (cos(lat) * cos(lon));
+				vertexData[start].position.y = size_ * (sin(lat));
+				vertexData[start].position.z = size_ * (cos(lat) * sin(lon));
 				vertexData[start].position.w = 1.0f;
 				//分割分移動
 				vertexData[start].texcoord.x = u;
 				vertexData[start].texcoord.y = v + length;
 
 				//点b(左上)
-				vertexData[start + 1].position.x = radius_ * (cos(lat + LAT_EVERY)) * cos(lon);
-				vertexData[start + 1].position.y = radius_ * (sin(lat + LAT_EVERY));
-				vertexData[start + 1].position.z = radius_ * (cos(lat + LAT_EVERY)) * sin(lon);
+				vertexData[start + 1].position.x = size_ * (cos(lat + LAT_EVERY)) * cos(lon);
+				vertexData[start + 1].position.y = size_ * (sin(lat + LAT_EVERY));
+				vertexData[start + 1].position.z = size_ * (cos(lat + LAT_EVERY)) * sin(lon);
 				vertexData[start + 1].position.w = 1.0f;
 				vertexData[start + 1].texcoord.x = u;
 				vertexData[start + 1].texcoord.y = v;
 
 
 				//点c(右下)
-				vertexData[start + 2].position.x = radius_ * (cos(lat) * cos(lon + LON_EVERY));
-				vertexData[start + 2].position.y = radius_ * (sin(lat));
-				vertexData[start + 2].position.z = radius_ * (cos(lat) * sin(lon + LON_EVERY));
+				vertexData[start + 2].position.x = size_ * (cos(lat) * cos(lon + LON_EVERY));
+				vertexData[start + 2].position.y = size_ * (sin(lat));
+				vertexData[start + 2].position.z = size_ * (cos(lat) * sin(lon + LON_EVERY));
 				vertexData[start + 2].position.w = 1.0f;
 				vertexData[start + 2].texcoord.x = u + length;
 				vertexData[start + 2].texcoord.y = v + length;
@@ -82,17 +77,17 @@ void Sphere::SphereDraw()
 #pragma region 三角形２枚目
 				//bcd
 				//点d(右上)
-				vertexData[start + 3].position.x = radius_ * (cos(lat + LAT_EVERY) * cos(lon + LON_EVERY));
-				vertexData[start + 3].position.y = radius_ * (sin(lat + LAT_EVERY));
-				vertexData[start + 3].position.z = radius_ * (cos(lat + LAT_EVERY) * sin(lon + LON_EVERY));
+				vertexData[start + 3].position.x = size_ * (cos(lat + LAT_EVERY) * cos(lon + LON_EVERY));
+				vertexData[start + 3].position.y = size_ * (sin(lat + LAT_EVERY));
+				vertexData[start + 3].position.z = size_ * (cos(lat + LAT_EVERY) * sin(lon + LON_EVERY));
 				vertexData[start + 3].position.w = 1.0f;
 				vertexData[start + 3].texcoord.x = u + length;
 				vertexData[start + 3].texcoord.y = v;
 
 				//点c(右下)
-				vertexData[start + 4].position.x = radius_ * (cos(lat) * cos(lon + LON_EVERY));
-				vertexData[start + 4].position.y = radius_ * (sin(lat));
-				vertexData[start + 4].position.z = radius_ * (cos(lat) * sin(lon + LON_EVERY));
+				vertexData[start + 4].position.x = size_ * (cos(lat) * cos(lon + LON_EVERY));
+				vertexData[start + 4].position.y = size_ * (sin(lat));
+				vertexData[start + 4].position.z = size_ * (cos(lat) * sin(lon + LON_EVERY));
 				vertexData[start + 4].position.w = 1.0f;
 				vertexData[start + 4].texcoord.x = u + length;
 				vertexData[start + 4].texcoord.y = v + length;
@@ -100,9 +95,9 @@ void Sphere::SphereDraw()
 
 
 				//点b(左上)
-				vertexData[start + 5].position.x = radius_ * (cos(lat + LAT_EVERY) * cos(lon));
-				vertexData[start + 5].position.y = radius_ * (sin(lat + LAT_EVERY));
-				vertexData[start + 5].position.z = radius_ * (cos(lat + LAT_EVERY) * sin(lon));
+				vertexData[start + 5].position.x = size_ * (cos(lat + LAT_EVERY) * cos(lon));
+				vertexData[start + 5].position.y = size_ * (sin(lat + LAT_EVERY));
+				vertexData[start + 5].position.z = size_ * (cos(lat + LAT_EVERY) * sin(lon));
 				vertexData[start + 5].position.w = 1.0f;
 				vertexData[start + 5].texcoord.x = u;
 				vertexData[start + 5].texcoord.y = v;
@@ -114,6 +109,8 @@ void Sphere::SphereDraw()
 	}
 	*wvpData = worldTransform.matWorld_;
 	*MaterialData = color_;
+	DrawColl();
+
 }
 
 void Sphere::TransferMatrix(Matrix4x4 m)
@@ -131,11 +128,11 @@ Matrix4x4 Sphere::GetWorldTransform()
 	return worldTransform.matWorld_;
 }
 
-void Sphere::Relese()
+void Sphere::Release()
 {
-	createResource_->Release(resource_.wvpResource);
-	createResource_->Release(resource_.Material);
-	createResource_->Release(resource_.Vertex);
+	CResource_->Release(resource_.wvpResource);
+	CResource_->Release(resource_.Material);
+	CResource_->Release(resource_.Vertex);
 }
 
 void Sphere::DrawColl()

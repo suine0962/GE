@@ -1,13 +1,15 @@
-﻿#pragma once
-#include <d3d12.h>
-#include <dxgi1_6.h>
-#include <cassert>
-#include <windows.h>
-#include <string>
-#include <format>
+#pragma once
 
-#pragma comment(lib,"d3d12.lib")
-#pragma comment(lib,"dxgi.lib")
+#include<Windows.h>
+#include<string>
+#include<format>
+
+
 std::wstring ComvertString(const std::string& str);
 
+
 std::string ComvertString(const std::wstring& str);
+
+void Log(const std::string& message);
+
+void CompliteLog();

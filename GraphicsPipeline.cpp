@@ -2,7 +2,7 @@
 
 void GraphicsPipeline::Initilize()
 {
-	DXCCreate();
+	dxcCreate();
 	DfIncludeHandlerSetting();
 }
 
@@ -48,23 +48,19 @@ void GraphicsPipeline::PSOCreate()
 
 }
 
-void GraphicsPipeline::Log(const std::string& message)
+
+void GraphicsPipeline::dxcCreate()
 {
-	OutputDebugStringA(message.c_str());
-}
+	HRESULT hr;
 
-
-
-void GraphicsPipeline::DXCCreate()
-{
-	HRESULT hr = S_FALSE;
-	hr =DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxc_.Utils));
+	hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxc_.Utils));
 	assert(SUCCEEDED(hr));
 
 	hr = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&dxc_.Compiler));
 	assert(SUCCEEDED(hr));
 
 }
+
 
 void GraphicsPipeline::DfIncludeHandlerSetting()
 {
@@ -79,7 +75,7 @@ void GraphicsPipeline::ShapePSO()
 	HRESULT hr = S_FALSE;
 
 	ID3D12Device* device_ = directX_->Getdevice();
-	PSOProperty shapePSO;
+	PSOProperty shapePSO{};
 	ShaderMode shader = shader_.shape;
 
 	//RootSIgnature
@@ -189,7 +185,7 @@ void GraphicsPipeline::ShapePSO()
 
 void GraphicsPipeline::SpritePSO()
 {
-	PSOProperty SpritePSO;
+	PSOProperty SpritePSO{};
 	ShaderMode shader = shader_.sprite;
 	ID3D12Device* device_ = directX_->Getdevice();
 	HRESULT hr = S_FALSE;
@@ -345,8 +341,6 @@ void GraphicsPipeline::PSORelese(PSOProperty pso)
 		pso.errorBlob->Release();
 	}
 	pso.rootSignature->Release();
-
-
 }
 
 
@@ -410,6 +404,7 @@ IDxcBlob* GraphicsPipeline::CreateCompileShader(
 	shaderSource->Release();
 	shaderResult->Release();
 	//実行用のバイナリを返却
+
 	return shaderBlob;
 
 }

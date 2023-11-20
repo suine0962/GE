@@ -35,3 +35,17 @@ std::string ComvertString(const std::wstring& str)
 	return result;
 
 }
+
+void Log(const std::string& message)
+{
+	OutputDebugStringA(message.c_str());
+
+
+}
+
+
+void CompliteLog()
+{
+	Log("Complite\n\n");
+
+}

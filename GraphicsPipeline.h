@@ -1,6 +1,7 @@
 #pragma once
 #include"DirectXCommon.h"
-#include <dxcapi.h>
+#include<dxcapi.h>
+#include"ComvertString.h"
 
 struct ShaderMode {
 	IDxcBlob* vertexBlob;
@@ -45,8 +46,6 @@ public:
 
 	PSO GetPSO() { return pso_; };
 
-	void Log(const std::string& message);
-
 	
 private:
 	IDxcBlob* CreateCompileShader(//compileするshaderファイルへのパス
@@ -55,7 +54,7 @@ private:
 		const wchar_t* profile
 	);
 
-	void DXCCreate();
+	void dxcCreate();
 
 	void DfIncludeHandlerSetting();
 

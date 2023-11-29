@@ -20,15 +20,18 @@ struct ResourcePropety
 
 
 
-class CreateResource
+class CreateResources
 {
 public:
 
-	ResourcePropety GetVertexDataCreateResource(size_t SizeInBytes) { return VertexDataCreateResource(num); };
+	~CreateResources();
 
-	ResourcePropety Vector4CreateResource(const int Num);
 
-	ResourcePropety VertexDataCreateResource(const int Num);
+	ResourcePropety GetVertexDataCreateResource(size_t SizeInBytes) { return VertexDataCreateResource(directX_,num); };
+
+	ResourcePropety Vector4CreateResource(DirectXCommon* directX,const int Num);
+
+	ResourcePropety VertexDataCreateResource(DirectXCommon* directX,const int Num);
 
 	ID3D12Resource* CreateBufferResource(ID3D12Device* device, size_t SizeInBytes);
 

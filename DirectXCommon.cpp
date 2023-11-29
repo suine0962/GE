@@ -1,34 +1,11 @@
 #include"DirectXCommon.h"
-void DirectXCommon::Initilize(WinApp* winApp, int32_t backBufferWidth,
-	int32_t backBufferHeight) {
+
+
+void DirectXCommon::Initilize(WinApp* winApp) {
 	//nullptrチェック
 	assert(winApp);
-	assert(4 <= backBufferWidth && backBufferWidth_<=4096);
-	assert(4 <= backBufferHeight && backBufferHedth_ <= 4096);
 
 	winApp_ = winApp;
-
-	backBufferWidth_ = backBufferWidth;
-	backBufferHedth_ = backBufferHeight;
-
-	
-	CreateDebugLayer();
-	CreateFactory();
-	CreateAdapter();
-	InitilizeDevice();
-	InitializeCommand();
-	CreateSwapChain();
-	CreateRTVDescriptorHeap();
-	dsvDescriptorHeap = CreateDescriptorHeap(device_, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1, false);
-
-	depthStencilResource = CreateDepthStencilTextureResource(device_,
-		winApp_->kWindowWidth, winApp_->kWindowHeight);
-	CreateDepthStencilView();
-
-	CreateFence();
-	
-
-
 }
 
 
@@ -38,24 +15,6 @@ void DirectXCommon:: Log(const std::string& message)
 	OutputDebugStringA(message.c_str());
 
 }
-
-ID3D12DescriptorHeap* DirectXCommon::CreateDescriptorHeap(ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible)
-{
-	ID3D12DescriptorHeap* descriptHeap = nullptr;
-	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
-	descriptorHeapDesc.Type = heapType;
-	descriptorHeapDesc.NumDescriptors = numDescriptors;
-	descriptorHeapDesc.Flags = shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-
-	HRESULT hr = device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&descriptHeap));
-	assert(SUCCEEDED(hr));
-	return descriptHeap;
-
-}
-
-
-
-
 
 void DirectXCommon::CreateFactory()
 {
@@ -195,11 +154,10 @@ void DirectXCommon::CreateDebugLayer()
 
 void DirectXCommon::CreateSwapChain()
 {
-	srvDescriptorHeap_ = CreateDescriptorHeap(device_, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128, true);
-	rtvDescriptorHeap_ = CreateDescriptorHeap(device_, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
 
 	swapChain_ = nullptr;
 	
+	HWND hwnd_ = winApp_->GetHwnd();
 
 	swapChainDesc.Width = backBufferWidth_;//画面の幅
 	swapChainDesc.Height = backBufferHedth_;//画面の幅
@@ -216,8 +174,36 @@ void DirectXCommon::CreateSwapChain()
 
 }
 
+ID3D12DescriptorHeap* DirectXCommon::CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible)
+{
+	ID3D12DescriptorHeap* descriptHeap = nullptr;
+	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
+	descriptorHeapDesc.Type = heapType;
+	descriptorHeapDesc.NumDescriptors = numDescriptors;
+	descriptorHeapDesc.Flags = shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	HRESULT hr = device_->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&descriptHeap));
+	assert(SUCCEEDED(hr));
+	return descriptHeap;
+
+}
+void DirectXCommon::CreateVDescriptorHeap()
+{
+	rtvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
+	srvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128,true);
+	dsvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1, false);
+
+	depthStencilResource = CreateDepthStencilTextureResource(device_);
+
+	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
+
+	dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+
+	device_->CreateDepthStencilView(depthStencilResource, &dsvDesc, dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart());
 
 
+}
 
 void DirectXCommon::CreateRTVDescriptorHeap()
 {
@@ -236,6 +222,11 @@ void DirectXCommon::CreateRTVDescriptorHeap()
 
 	result = swapChain_->GetBuffer(1, IID_PPV_ARGS(&swapChainResources_[1]));
 	assert(SUCCEEDED(result));
+
+}
+
+void DirectXCommon::CreateSettingRTV()
+{
 	//RTVの設定
 	rtvDesc_.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;//出力結果をSRGBに変換して書き込む
 	rtvDesc_.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;//2dテクスチャとして書き込む
@@ -243,7 +234,7 @@ void DirectXCommon::CreateRTVDescriptorHeap()
 	rtvStartHandle_ = rtvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart();
 	//RTVを2つ作るのでディスクリプタを二つ用意する
 	//D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles_[2];
-	
+
 	//まず一つ目をつくる、作る場所をこちらで設定してあげる必要がある
 	rtvHandles_[0] = rtvStartHandle_;
 	device_->CreateRenderTargetView(swapChainResources_[0], &rtvDesc_, rtvHandles_[0]);
@@ -252,17 +243,17 @@ void DirectXCommon::CreateRTVDescriptorHeap()
 	//二つ目を作る
 	device_->CreateRenderTargetView(swapChainResources_[1], &rtvDesc_, rtvHandles_[1]);
 
-
 }
 
 
-ID3D12Resource* DirectXCommon::CreateDepthStencilTextureResource(ID3D12Device* device, int32_t width, int32_t height)
+ID3D12Resource* DirectXCommon::CreateDepthStencilTextureResource(ID3D12Device* device)
 {
 	HRESULT hr = S_FALSE;
 	D3D12_RESOURCE_DESC DepthResourceDesc_{};
 
-	DepthResourceDesc_.Width = width;//Textureの幅
-	DepthResourceDesc_.Height = height;//Textureの動き
+
+	DepthResourceDesc_.Width = winApp_->kWindowWidth;//Textureの幅
+	DepthResourceDesc_.Height = winApp_->kWindowHeight;//Textureの動き
 	DepthResourceDesc_.MipLevels = 1;//mipmapの数
 	DepthResourceDesc_.DepthOrArraySize = 1;//奥行or配列textureの配列数
 	DepthResourceDesc_.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;//DepthStencilとして利用可能なフォーマット
@@ -296,19 +287,6 @@ ID3D12Resource* DirectXCommon::CreateDepthStencilTextureResource(ID3D12Device* d
 }
 
 
-void DirectXCommon::CreateDepthStencilView()
-{
-	//DSVの設定
-	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
-	dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-	//DSVheap上の先頭にDSVを作る
-	device_->CreateDepthStencilView(
-		depthStencilResource,
-		&dsvDesc,
-		dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-}
-
 void DirectXCommon::CreatePreDraw()
 {
 	HRESULT result = S_FALSE;
@@ -337,7 +315,7 @@ void DirectXCommon::CreatePreDraw()
 	commandList_->ClearRenderTargetView(rtvHandles_[backBufferIndex_], ClearColor_, 0, nullptr);
 
 
-	dsvHandle = dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	dsvHandle = dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart();
 
 	commandList_->OMSetRenderTargets(1, &rtvHandles_[backBufferIndex_], false, &dsvHandle);
 
@@ -432,6 +410,8 @@ void DirectXCommon::CreateFence()
 	//}
 
 }
+
+
 
 
 

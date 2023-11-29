@@ -1,7 +1,9 @@
 #include "GraphicsPipeline.h"
 
-void GraphicsPipeline::Initilize()
+void GraphicsPipeline::Initilize(DirectXCommon*directX)
 {
+	directX_ = directX;
+
 	dxcCreate();
 	DfIncludeHandlerSetting();
 }
@@ -21,19 +23,19 @@ void GraphicsPipeline::ShaderCompile()
 	ShaderMode shape, sprite{};
 
 	shape.vertexBlob = CreateCompileShader(
-		L"./Object3d.VS.hlsl",
+		L"./ShapeObject3d.VS.hlsl",
 		L"vs_6_0");
 
 	shape.pixleBlob = CreateCompileShader(
-		L"./Object3d.PS.hlsl",
+		L"./ShapeObject3d.PS.hlsl",
 		L"ps_6_0");
 
 	sprite.vertexBlob = CreateCompileShader(
-		L"./Object3d.VS.hlsl",
+		L"./SpriteObject3d.VS.hlsl",
 		L"vs_6_0");
 
 	sprite.pixleBlob = CreateCompileShader(
-		L"./Object3d.PS.hlsl",
+		L"./SpriteObject3d.PS.hlsl",
 		L"ps_6_0");
 
 	shader_.shape = shape;
@@ -111,7 +113,7 @@ void GraphicsPipeline::ShapePSO()
 
 	//バイナリをもとに生成
 
-	hr = directX_->Getdevice()->CreateRootSignature(0,shapePSO.signatureBlob ->GetBufferPointer(),
+	hr = directX_->Getdevice()->CreateRootSignature(0, shapePSO.signatureBlob->GetBufferPointer(),
 		shapePSO.signatureBlob->GetBufferSize(), IID_PPV_ARGS(&shapePSO.rootSignature));
 
 	assert(SUCCEEDED(hr));

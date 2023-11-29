@@ -18,8 +18,7 @@
 class DirectXCommon
 {
 public:
-	void Initilize(WinApp*win,int32_t backBufferWidth=WinApp::kWindowWidth,
-		int32_t backBufferHeight=WinApp::kWindowHeight);
+	void Initilize(WinApp*win);
 
 #pragma region get
 	ID3D12Device* Getdevice(){ return device_; };
@@ -76,7 +75,7 @@ private:
 	HANDLE fenceEvent_ ;
 
 	ID3D12Resource* depthStencilResource = nullptr;
-	ID3D12DescriptorHeap* dsvDescriptorHeap = nullptr;
+	ID3D12DescriptorHeap* dsvDescriptorHeap_ = nullptr;
 	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle;
 	//ReportLiveObjects
 	IDXGIDebug1* debug;
@@ -84,8 +83,8 @@ private:
 	
 
 public:
-	ID3D12DescriptorHeap* CreateDescriptorHeap(ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible);
-	ID3D12Resource* CreateDepthStencilTextureResource(ID3D12Device* device, int32_t width, int32_t height);
+	ID3D12DescriptorHeap* CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible);
+	ID3D12Resource* CreateDepthStencilTextureResource(ID3D12Device* device);
 
 
 	void CreatePreDraw();
@@ -105,6 +104,10 @@ public:
 	void CreateSwapChain();
 
 	void CreateRTVDescriptorHeap();
+
+	void CreateSettingRTV();
+
+	void CreateVDescriptorHeap();
 
 	void CreateFence();
 

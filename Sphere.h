@@ -11,7 +11,8 @@
 class Sphere :public IModelState
 {
 public:
-	void Initilize(Vector4 pos,float size,WorldTransform worldTransform,texResourceProperty tex)override;
+
+	void Initilize(DirectXCommon*directX, CreateResources* CResource,Vector4 pos,float size,WorldTransform worldTransform,texResourceProperty tex)override;
 
 	void Draw()override;
 
@@ -44,9 +45,9 @@ private:
 
 	Vector4 color_ = { 1,1,1,1 };
 
-	DirectXCommon* directX_ = nullptr;
+	CreateResources* CResource_;
 
-	CreateResource* CResource_;
+	DirectXCommon* directX_;
 
 	GraphicsPipeline* PSO_ = nullptr;
 
@@ -55,8 +56,6 @@ private:
 	float size_ = 0;
 
 	const int VertexNum=16;
-
-
 	
 };
 

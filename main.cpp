@@ -5,7 +5,7 @@
 #include"TextureManeger.h"
 #include"Sphere.h"
 #include"suine.h"
-
+#include"CreateResource.h"
 
 //Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
@@ -19,12 +19,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Suine* suine = new Suine();
 	WinApp* winApp = new WinApp();
 	DirectXCommon* directXCommon = new DirectXCommon();
+	GraphicsPipeline* pso = new GraphicsPipeline();
 	ImGuiManager* imguiManeger = new ImGuiManager();
 	TextureManeger* texManeger = new TextureManeger();
 	Camera* camera = new Camera();
+	CreateResources* CResource = new CreateResources();
 
-
-	suine->Initilize();
+	suine->Initilize(winApp, directXCommon, pso, camera, texManeger);
 
 	Transform cameraTransform
 	{
@@ -50,7 +51,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	texResourceProperty Monstertex =
 		texManeger->LoadTexture("DefaultResources/monsterBall.png");
 
-	model->Initilize(pos, size, worldTransform[0], UVtex, sphere);
+	model->Initilize(directXCommon, CResource, pos, size, worldTransform[0], UVtex, sphere);
 
 	Sprite* sprite = new Sprite();
 

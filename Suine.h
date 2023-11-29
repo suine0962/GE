@@ -12,7 +12,8 @@
 class Suine
 {
 public:
-	void Initilize();
+	void Initilize(WinApp*winApp,DirectXCommon*directX,GraphicsPipeline*pso_,
+		Camera*camera,TextureManeger*texManager);
 
 	void Finalize();
 
@@ -26,17 +27,17 @@ private:
 
 	WinApp* winApp_ = nullptr;
 
-	DirectXCommon* directXCommon = nullptr;
+	DirectXCommon* directX_ = nullptr;
 
-	GraphicsPipeline* PSO = nullptr;
+	GraphicsPipeline* PSO_ = nullptr;
 
-	ImGuiManager* Imgui = nullptr;
+	ImGuiManager* Imgui_ = nullptr;
 
 	Model* model = nullptr;
 
-	Camera* camera = nullptr;
+	Camera* camera_ = nullptr;
 
-	TextureManeger* texManager = nullptr;
+	TextureManeger* texManager_ = nullptr;
 
 	Sprite* sprite = nullptr;
 };

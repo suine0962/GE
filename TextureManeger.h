@@ -26,7 +26,7 @@ class TextureManeger
 {
 public:
 
-	void Initilize();
+	void Initilize(DirectXCommon*directX);
 	void Finalize();
 
 	void UploadTexData(ID3D12Resource* tex, const DirectX::ScratchImage& mipImage);

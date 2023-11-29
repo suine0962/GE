@@ -22,9 +22,8 @@ LRESULT WinApp::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 
 }
-void WinApp::CreateGameWindow(const wchar_t* title, UINT windowStyle, int32_t clientWidth, int32_t clientHeight)
+void WinApp::Initilize()
 {
-
 
 	//ウィンドウプローシャ
 	wc_.lpfnWndProc = WindowProc;

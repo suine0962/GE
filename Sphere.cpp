@@ -1,8 +1,11 @@
 #include "Sphere.h"
 
-void Sphere::Initilize(Vector4 pos, float size, WorldTransform worldTransform, texResourceProperty tex)
+void Sphere::Initilize(DirectXCommon* directX,CreateResources* CResource,Vector4 pos, float size, WorldTransform worldTransform, texResourceProperty tex)
 {
-	resource_ = CResource_->GetVertexDataCreateResource(VertexNum * VertexNum * 6);
+	CResource_ = CResource;
+	directX_ = directX;
+
+	resource_= CResource_->GetVertexDataCreateResource(VertexNum * VertexNum * 6);
 
 	centerPos_ = pos;
 	size_ = size;
@@ -130,6 +133,7 @@ Matrix4x4 Sphere::GetWorldTransform()
 
 void Sphere::Release()
 {
+
 	CResource_->Release(resource_.wvpResource);
 	CResource_->Release(resource_.Material);
 	CResource_->Release(resource_.Vertex);

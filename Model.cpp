@@ -1,7 +1,9 @@
 #include "Model.h"
 
-void Model::Initilize(Vector4 pos, float size, WorldTransform worldTransform, texResourceProperty tex, SlectModel select)
+void Model::Initilize(DirectXCommon* directX,CreateResources* CResource,Vector4 pos, float size, WorldTransform worldTransform, texResourceProperty tex, SlectModel select)
 {
+	CResource_ = CResource;
+	directX_ = directX;
 
 	switch (select)
 	{
@@ -12,7 +14,7 @@ void Model::Initilize(Vector4 pos, float size, WorldTransform worldTransform, te
 		state_ = new Sphere;
 		break;
 	}
-	state_->Initilize(pos, size, worldTransform, tex);
+	state_->Initilize(directX_, CResource_, pos, size, worldTransform, tex);
 }
 
 void Model::Draw()

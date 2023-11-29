@@ -19,7 +19,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
-    <None Include="Object3d.hlsli" />
+    <None Include="SpriteObject3d.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -185,8 +185,10 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Object3d.PS.hlsl" />
-    <FxCompile Include="Object3d.VS.hlsl" />
+    <FxCompile Include="SpriteObject3d.PS.hlsl" />
+    <FxCompile Include="SpriteObject3d.VS.hlsl" />
+    <FxCompile Include="ShapeObject3d.VS.hlsl" />
+    <FxCompile Include="ShapeObject3d.PS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt">

@@ -1,34 +1,55 @@
 #include "Suine.h"
 
-void Suine::Initilize()
+void Suine::Initilize(WinApp*winApp,DirectXCommon* directX,
+	GraphicsPipeline*pso,Camera* camera,TextureManeger*texManager)
 {
+
+	winApp_ = winApp;
+	directX_ = directX;
+	PSO_ = pso;
+	camera_ = camera;
+	texManager_ = texManager;
+
 	//WinAPP
-	winApp_->CreateGameWindow();
+	winApp_->Initilize();
 	
 	//DirectXCommon
-	directXCommon->CreateFactory();
-	directXCommon->CreateAdapter();
-	directXCommon->InitilizeDevice();
-	directXCommon->InitializeCommand();
-	directXCommon->CreateDebugLayer();
-	directXCommon->CreateSwapChain();
-	directXCommon->CreateRTVDescriptorHeap();
-	directXCommon->CreateDepthStencilView();
-	directXCommon->CreateFence();
+
+	directX_->Initilize(winApp_);
+
+	directX_->CreateFactory();
+
+	directX_->CreateAdapter();
+
+	directX_->CreateDebugLayer();
+
+	directX_->InitilizeDevice();
+
+	directX_->InitializeCommand();
+
+	directX_->CreateSwapChain();
+
+	directX_->CreateRTVDescriptorHeap();
+
+	directX_->CreateSettingRTV();
+
+	directX_->CreateVDescriptorHeap();
+
+	directX_->CreateFence();
 	
 	//ImGuiManager
-	Imgui->Initialize(winApp_, directXCommon);
+	Imgui_->Initialize(winApp_, directX_);
 
 	//PipeLine
-	PSO->Initilize();
-	PSO->ShaderCompile();
-	PSO->PSOCreate();
+	PSO_->Initilize(directX_);
+	PSO_->ShaderCompile();
+	PSO_->PSOCreate();
 
 	//Camera
-	camera->Initialize(winApp_);
+	camera_->Initialize(winApp_);
 
 	//TextureManager
-	texManager->Initilize();
+	texManager_->Initilize(directX_);
 
 	//sprite
 
@@ -44,15 +65,15 @@ void Suine::WinMSG(MSG msg)
 
 void Suine::BeginFrame(const int32_t KClientWidth, const int32_t KClientHedth)
 {
-	directXCommon->CreatePreDraw();
-	directXCommon->PostDraw();
+	directX_->CreatePreDraw();
+	directX_->PostDraw();
 
-	Imgui->BeginFlame(directXCommon);
+	Imgui_->BeginFlame(directX_);
 }
 
 void Suine::EndFrame()
 {
-	Imgui->EndFlame(directXCommon);
+	Imgui_->EndFlame(directX_);
 }
 
 

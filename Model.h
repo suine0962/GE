@@ -14,7 +14,10 @@ enum SlectModel
 class Model
 {
 public:
-	void Initilize(Vector4 pos,float size ,WorldTransform worldTransform,texResourceProperty tex, SlectModel select);
+
+
+	void Initilize(DirectXCommon* directX,CreateResources* CResource ,Vector4 pos,float size ,
+		WorldTransform worldTransform,texResourceProperty tex, SlectModel select);
 
 	void Draw();
 
@@ -30,5 +33,9 @@ private:
 	Shaders shader_{ nullptr,nullptr };
 
 	IModelState* state_ = nullptr;
+
+	CreateResources* CResource_ = nullptr;
+
+	DirectXCommon* directX_ = nullptr;
 };
 

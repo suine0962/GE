@@ -28,7 +28,7 @@ class Sprite
 {
 public:
 
-	void Initilize(Vector2 leftpos, float size,
+	void Initilize( Vector2 leftpos, float size,
 		WorldTransform worldTransform, texResourceProperty texResource, const SpriteMode mode);
 
 	void TransforMatrix(Matrix4x4 m);
@@ -50,7 +50,7 @@ private:
 
 
 	DirectXCommon* directX_ = nullptr;
-	CreateResource* CResource_ = nullptr;
+	CreateResources* CResource_ = nullptr;
 	GraphicsPipeline* pso_ = nullptr;
 
 	struct VertexData {

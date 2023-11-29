@@ -1,7 +1,13 @@
-﻿#pragma once
+#pragma once
 #include<Windows.h>
 #include<cstdint>
 #include <d3d12.h>
+#include<string>
+#include "externals/imgui/imgui.h"
+
+#include"externals/imgui/imgui_impl_dx12.h"
+#include"externals/imgui/imgui_impl_win32.h"
+
 
 //ウィンドウズアプリケーション
 class WinApp
@@ -32,9 +38,7 @@ public://静的メンバ関数
 
 public://メンバ関数
 	//ウィンドウの生成
-	void CreateGameWindow(
-		const wchar_t* title = L"CG2", UINT windowStyle = WS_OVERLAPPEDWINDOW,
-		int32_t clientWidth = kWindowWidth, int32_t clientHeight = kWindowHeight);
+	void Initilize();
 
 	/*/// ゲームウィンドウの破棄
 	void TerminateGameWindow();*/

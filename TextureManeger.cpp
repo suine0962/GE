@@ -6,9 +6,11 @@ DescriptorSize descriptorSize_;
 
 uint32_t texIndex;
 
-void TextureManeger::Initilize()
+void TextureManeger::Initilize(DirectXCommon*directX)
 {
 	CoInitializeEx(0, COINIT_MULTITHREADED);
+
+	directX_ = directX;
 
 	descriptorSize_.SRV = directX_->Getdevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	descriptorSize_.RTV = directX_->Getdevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);

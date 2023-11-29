@@ -1,32 +1,36 @@
 #include "CreateResource.h"
 
-ResourcePropety CreateResource::Vector4CreateResource(const int Num)
-{
-	ResourcePropety Result;
-	ID3D12Device* device_ = directX_->Getdevice();
+CreateResources::~CreateResources() {
 
-	Result.Vertex = CreateBufferResource(device_, sizeof(Vector4) * Num);//1頂点あたりのサイズを決める
-	Result.Material = CreateBufferResource(device_, sizeof(Vector4) * 3);//
-	Result.wvpResource = CreateBufferResource(device_, sizeof(Matrix4x4) * Num);
+}
+
+ResourcePropety CreateResources::Vector4CreateResource(DirectXCommon *directX,const int Num)
+{
+	directX_ = directX;
+	ResourcePropety Result;
+
+	Result.Vertex = CreateBufferResource(directX_->Getdevice(), sizeof(Vector4) * Num);//1頂点あたりのサイズを決める
+	Result.Material = CreateBufferResource(directX_->Getdevice(), sizeof(Vector4) * 3);//
+	Result.wvpResource = CreateBufferResource(directX_->Getdevice(), sizeof(Matrix4x4) * Num);
 	Result.vertexBufferView_ = CreateBufferView(Result.Vertex, sizeof(Vector4) * Num, Num);
 
 	return Result;
 }
 
-ResourcePropety CreateResource::VertexDataCreateResource(const int Num)
+ResourcePropety CreateResources::VertexDataCreateResource(DirectXCommon *directX,const int Num)
 {
+	directX_ = directX;
 	ResourcePropety Result;
-	ID3D12Device* device = directX_->Getdevice();
 
-	Result.Vertex = CreateBufferResource(device, sizeof(VertexData) * Num);
-	Result.Material = CreateBufferResource(device, sizeof(Vector4) * 3);
-	Result.wvpResource = CreateBufferResource(device, sizeof(Matrix4x4) * Num);
+	Result.Vertex = CreateBufferResource(directX_->Getdevice(), sizeof(VertexData) * Num);
+	Result.Material = CreateBufferResource(directX_->Getdevice(), sizeof(Vector4) * 3);
+	Result.wvpResource = CreateBufferResource(directX_->Getdevice(), sizeof(Matrix4x4) * Num);
 	Result.vertexBufferView_ = CreateBufferView(Result.Vertex, sizeof(VertexData) * Num, Num);
 
 	return Result;
 }
 
-ID3D12Resource* CreateResource::CreateBufferResource(ID3D12Device* device, size_t SizeInBytes)
+ID3D12Resource* CreateResources::CreateBufferResource(ID3D12Device* device, size_t SizeInBytes)
 {
 
 	ID3D12Resource* RssultResource = nullptr;
@@ -58,7 +62,7 @@ ID3D12Resource* CreateResource::CreateBufferResource(ID3D12Device* device, size_
 	return RssultResource;
 }
 
-D3D12_VERTEX_BUFFER_VIEW CreateResource::CreateBufferView(ID3D12Resource* Resource, size_t strideInBytes, int size)
+D3D12_VERTEX_BUFFER_VIEW CreateResources::CreateBufferView(ID3D12Resource* Resource, size_t strideInBytes, int size)
 {
 	D3D12_VERTEX_BUFFER_VIEW resultBufferView = {};
 
@@ -73,7 +77,7 @@ D3D12_VERTEX_BUFFER_VIEW CreateResource::CreateBufferView(ID3D12Resource* Resour
 	return resultBufferView;
 }
 
-void CreateResource::Release(ID3D12Resource* resource)
+void CreateResources::Release(ID3D12Resource* resource)
 {
 	resource->Release();
 }

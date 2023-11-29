@@ -1,6 +1,7 @@
 #pragma once
 #include"WorldTransform.h"
 #include"TextureManeger.h"
+#include"CreateResource.h"
 
 class Model;
 
@@ -8,7 +9,7 @@ class IModelState
 {
 public:
 
-	virtual void Initilize(Vector4 pos, float size,
+	virtual void Initilize(DirectXCommon* directX,CreateResources* CResource, Vector4 pos, float size,
 		WorldTransform worldTransform, texResourceProperty tex) = 0;
 
 	virtual void Draw() = 0;
@@ -22,5 +23,7 @@ public:
 	virtual Matrix4x4 GetWorldTransform() = 0;
 
 private:
+	CreateResources* CResource_ = nullptr;
+
 };
 

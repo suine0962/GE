@@ -1,7 +1,9 @@
 #pragma once
 #include"DirectXCommon.h"
-#include<dxcapi.h>
 #include"ComvertString.h"
+#include<dxcapi.h>
+
+#pragma comment(lib,"dxcompiler.lib")
 
 struct ShaderMode {
 	IDxcBlob* vertexBlob;
@@ -36,7 +38,7 @@ struct DXCProperty {
 class GraphicsPipeline
 {
 public:
-	void Initilize();
+	void Initilize(DirectXCommon*directX);
 
 	void Finalize();
 

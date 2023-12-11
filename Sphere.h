@@ -12,7 +12,11 @@ class Sphere :public IModelState
 {
 public:
 
-	void Initilize(DirectXCommon*directX, CreateResources* CResource,Vector4 pos,float size,WorldTransform worldTransform,texResourceProperty tex)override;
+	Sphere();
+	~Sphere();
+
+	void Initilize(DirectXCommon*directX, CreateResources* CResource,GraphicsPipeline*PSO,
+		Vector4 pos,float size,WorldTransform worldTransform,texResourceProperty tex)override;
 
 	void Draw()override;
 

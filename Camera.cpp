@@ -1,5 +1,13 @@
 #include "Camera.h"
 
+Camera::Camera()
+{
+}
+
+Camera::~Camera()
+{
+}
+
 void Camera::Initialize(WinApp*winApp)
 {
 	assert(winApp);

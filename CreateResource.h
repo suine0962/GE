@@ -24,14 +24,16 @@ class CreateResources
 {
 public:
 
+	CreateResources();
 	~CreateResources();
 
+	void Initilize(DirectXCommon* directX);
 
-	ResourcePropety GetVertexDataCreateResource(size_t SizeInBytes) { return VertexDataCreateResource(directX_,num); };
+	ResourcePropety GetVertexDataCreateResource(size_t SizeInBytes) { return VertexDataCreateResource((int)SizeInBytes); };
 
-	ResourcePropety Vector4CreateResource(DirectXCommon* directX,const int Num);
+	ResourcePropety Vector4CreateResource(const int  Num);
 
-	ResourcePropety VertexDataCreateResource(DirectXCommon* directX,const int Num);
+	ResourcePropety VertexDataCreateResource(const int Num);
 
 	ID3D12Resource* CreateBufferResource(ID3D12Device* device, size_t SizeInBytes);
 
@@ -41,7 +43,7 @@ public:
 
 
 private:
-	DirectXCommon* directX_;
-	const int num;
+	DirectXCommon* directX_ = nullptr;
+	int Num = 0;
 };
 

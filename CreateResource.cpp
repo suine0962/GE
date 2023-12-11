@@ -1,12 +1,23 @@
 #include "CreateResource.h"
 
-CreateResources::~CreateResources() {
+CreateResources::CreateResources()
+{
 
 }
 
-ResourcePropety CreateResources::Vector4CreateResource(DirectXCommon *directX,const int Num)
+CreateResources::~CreateResources()
+{
+
+}
+
+void CreateResources::Initilize(DirectXCommon* directX)
 {
 	directX_ = directX;
+
+}
+
+ResourcePropety CreateResources::Vector4CreateResource(const int Num)
+{
 	ResourcePropety Result;
 
 	Result.Vertex = CreateBufferResource(directX_->Getdevice(), sizeof(Vector4) * Num);//1頂点あたりのサイズを決める
@@ -17,9 +28,8 @@ ResourcePropety CreateResources::Vector4CreateResource(DirectXCommon *directX,co
 	return Result;
 }
 
-ResourcePropety CreateResources::VertexDataCreateResource(DirectXCommon *directX,const int Num)
+ResourcePropety CreateResources::VertexDataCreateResource(const int Num)
 {
-	directX_ = directX;
 	ResourcePropety Result;
 
 	Result.Vertex = CreateBufferResource(directX_->Getdevice(), sizeof(VertexData) * Num);
@@ -32,6 +42,7 @@ ResourcePropety CreateResources::VertexDataCreateResource(DirectXCommon *directX
 
 ID3D12Resource* CreateResources::CreateBufferResource(ID3D12Device* device, size_t SizeInBytes)
 {
+	device = directX_->Getdevice();
 
 	ID3D12Resource* RssultResource = nullptr;
 	//頂点リソース用のヒープの設定
@@ -51,11 +62,10 @@ ID3D12Resource* CreateResources::CreateBufferResource(ID3D12Device* device, size
 	ResouceDesc.SampleDesc.Count = 1;
 	//バッファの場合はこれにするきまり
 	ResouceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-	//実際に頂点リソースを作る
-	ID3D12Resource* Resource = nullptr;
-	HRESULT hr = directX_->Getdevice()->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE,
+	
+	HRESULT hr = device->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE,
 		&ResouceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
-		IID_PPV_ARGS(&Resource));
+		IID_PPV_ARGS(&RssultResource));
 	assert(SUCCEEDED(hr));
 
 

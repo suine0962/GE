@@ -376,6 +376,35 @@ void DirectXCommon::PostDraw()
 
 }
 
+void DirectXCommon::FenceRelease()
+{
+	CloseHandle(fenceEvent_);
+	fence_->Release();
+}
+
+void DirectXCommon::DescreptorRelease()
+{
+	dsvDescriptorHeap_->Release();
+	rtvDescriptorHeap_->Release();
+	srvDescriptorHeap_->Release();
+}
+
+void DirectXCommon::swapchainRelease()
+{
+	swapChainResources_[0]->Release();
+	swapChainResources_[1]->Release();
+	swapChain_->Release();
+}
+
+void DirectXCommon::CommandRelease()
+{
+	commandList_->Release();
+	commandAllocator_->Release();
+	commandQueue_->Release();
+}
+
+
+
 
 
 
@@ -412,35 +441,19 @@ void DirectXCommon::CreateFence()
 }
 
 
-
-
-
-void  DirectXCommon::CreateRelease()
+void DirectXCommon::Finalize()
 {
-	CloseHandle(fenceEvent_);
-	fence_->Release();
-	infoQueue_->Release();
-	swapChainResources_[1]->Release();
-	swapChainResources_[0]->Release();
-	rtvDescriptorHeap_->Release();
-	swapChain_->Release();
-	commandList_->Release();
-	commandAllocator_->Release();
-	commandQueue_->Release();
+	FenceRelease();
+	DescreptorRelease();
+	depthStencilResource->Release();
+	swapchainRelease();
+	CommandRelease();
 	device_->Release();
 	useAdapter_->Release();
 	dxgiFactory_->Release();
-	Getdevice()->Release();
-	GetcommandList()->Release();
-
-#ifdef _DEBUG
 	debugController_->Release();
-#endif // _DEBUG
-	
-	CloseWindow(winApp_->GetHwnd());
+
 }
-
-
 
 
 

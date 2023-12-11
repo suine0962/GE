@@ -2,6 +2,7 @@
 #include"WorldTransform.h"
 #include"TextureManeger.h"
 #include"CreateResource.h"
+#include"GraphicsPipeline.h"
 
 class Model;
 
@@ -9,7 +10,9 @@ class IModelState
 {
 public:
 
-	virtual void Initilize(DirectXCommon* directX,CreateResources* CResource, Vector4 pos, float size,
+
+
+	virtual void Initilize(DirectXCommon* directX,CreateResources* CResource,GraphicsPipeline*PSO, Vector4 pos, float size,
 		WorldTransform worldTransform, texResourceProperty tex) = 0;
 
 	virtual void Draw() = 0;
@@ -24,6 +27,6 @@ public:
 
 private:
 	CreateResources* CResource_ = nullptr;
-
+	GraphicsPipeline* PSO_ = nullptr;
 };
 

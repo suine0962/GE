@@ -16,6 +16,9 @@ class Camera
 {
 public:
 
+	Camera();
+	~Camera();
+
 	void Initialize(WinApp*winApp);
 
 	void Finalize();

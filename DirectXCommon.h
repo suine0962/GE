@@ -113,10 +113,17 @@ public:
 
 	void CreateReportLive();
 
-	void CreateRelease();
-
 	void PostDraw();
 
 	void CreateDepthStencilView();
 	
+	void FenceRelease();
+
+	void DescreptorRelease();
+
+	void swapchainRelease();
+
+	void CommandRelease();
+
+	void Finalize();
 };

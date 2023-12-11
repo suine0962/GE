@@ -1,9 +1,18 @@
 #include "Sphere.h"
 
-void Sphere::Initilize(DirectXCommon* directX,CreateResources* CResource,Vector4 pos, float size, WorldTransform worldTransform, texResourceProperty tex)
+Sphere::Sphere()
+{
+}
+
+Sphere::~Sphere()
+{
+}
+
+void Sphere::Initilize(DirectXCommon* directX,CreateResources* CResource,GraphicsPipeline*PSO,Vector4 pos, float size, WorldTransform worldTransform, texResourceProperty tex)
 {
 	CResource_ = CResource;
 	directX_ = directX;
+	PSO_ = PSO;
 
 	resource_= CResource_->GetVertexDataCreateResource(VertexNum * VertexNum * 6);
 
@@ -133,7 +142,6 @@ Matrix4x4 Sphere::GetWorldTransform()
 
 void Sphere::Release()
 {
-
 	CResource_->Release(resource_.wvpResource);
 	CResource_->Release(resource_.Material);
 	CResource_->Release(resource_.Vertex);
@@ -150,6 +158,7 @@ void Sphere::DrawColl()
 	//形状を設定
 	directX_->GetcommandList()->IASetVertexBuffers(0, 1, &resource_.vertexBufferView_);
 
+	directX_->GetcommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	//wvp用のCBufferの場所を設定
 	directX_->GetcommandList()->SetGraphicsRootConstantBufferView(1, resource_.wvpResource->GetGPUVirtualAddress());
 
@@ -158,5 +167,7 @@ void Sphere::DrawColl()
 
 	//
 	directX_->GetcommandList()->SetGraphicsRootDescriptorTable(2, tex_.SrvHandleGPU);
+
+	directX_->GetcommandList()->DrawInstanced(6, 1, 0, 0);
 
 }

@@ -6,6 +6,7 @@
 #include"Sphere.h"
 #include"suine.h"
 #include"CreateResource.h"
+#include"Model.h"
 
 //Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
@@ -25,7 +26,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Camera* camera = new Camera();
 	CreateResources* CResource = new CreateResources();
 
-	suine->Initilize(winApp, directXCommon, pso, camera, texManeger);
+	suine->Initilize(winApp, directXCommon, pso, camera, texManeger,CResource);
 
 	Transform cameraTransform
 	{
@@ -42,7 +43,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	Model* model = new Model();
 
-	Vector4 pos = { 0,0,0,-1 };
+	Vector4 pos = { 0,0,0,1 };
 
 	float size = 1;
 
@@ -51,11 +52,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	texResourceProperty Monstertex =
 		texManeger->LoadTexture("DefaultResources/monsterBall.png");
 
-	model->Initilize(directXCommon, CResource, pos, size, worldTransform[0], UVtex, sphere);
+	model->Initilize(directXCommon, CResource, pso, pos, size, worldTransform[0], UVtex, sphere);
 
 	Sprite* sprite = new Sprite();
 
-	sprite->Initilize({ 0,0 }, 320, worldTransform[1], UVtex, Box);
+	sprite->Initilize(CResource,pso,directXCommon,{ 0,0 }, 320, worldTransform[1], UVtex, Box);
 
 	bool texFlag = false;
 
@@ -71,8 +72,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		suine->BeginFrame(KCientwidth, KCientHeight);
 
 		ImGui::Begin("sphere");
-		ImGui::SliderFloat4("Trans", &worldTransform[0].transform_.x, 10.0f, -10.0f);
-		ImGui::SliderFloat4("rotate", &worldTransform[0].rotation_.x, 10.0f, -10.0f);
+		ImGui::SliderFloat4("Trans", &worldTransform[0].transform_.x, -10.0f, 10.0f);
+		ImGui::SliderFloat4("rotate", &worldTransform[0].rotation_.x, -10.0f, 10.0f);
 		ImGui::Checkbox("tex", &texFlag);
 		ImGui::End();
 
@@ -97,16 +98,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		model->Draw();
 
+
+		ImGui::Begin("Camera");
+		ImGui::SliderFloat3("trans", &cameraTransform.translate.x, -10.0f, 10.0f);
+		ImGui::End();
+
+		camera->SetPosition(cameraTransform);
+
 		ImGui::Begin("sprite");
-		ImGui::SliderFloat4("Trans", &worldTransform[1].transform_.x, 10.0f, -10.0f);
-		ImGui::SliderFloat4("rotate", &worldTransform[1].rotation_.x, 10.0f, -10.0f);
+		ImGui::SliderFloat4("Trans", &worldTransform[1].transform_.x, -10.0f, 10.0f);
+		ImGui::SliderFloat4("rotate", &worldTransform[1].rotation_.x, -10.0f, 10.0f);
 		ImGui::Checkbox("tex", &texFlag);
 		ImGui::End();
 
+
 		Matrix4x4 SpriteWorldMatrix = MakeAffineMatrix(
-			worldTransform[0].scale_,
-			worldTransform[0].rotation_,
-			worldTransform[0].transform_);
+			worldTransform[1].scale_,
+			worldTransform[1].rotation_,
+			worldTransform[1].transform_);
 
 		SpriteWorldMatrix = camera->worldViewProjectionMatrix(SpriteWorldMatrix);
 
@@ -120,5 +129,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	UVtex = texManeger->Release(UVtex);
 	Monstertex = texManeger->Release(Monstertex);
 	
+	sprite->Release();
+	model->Release();
+
+	suine->Finalize();
+
 	return 0;
 }

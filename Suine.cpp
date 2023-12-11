@@ -1,7 +1,8 @@
 #include "Suine.h"
 
 void Suine::Initilize(WinApp*winApp,DirectXCommon* directX,
-	GraphicsPipeline*pso,Camera* camera,TextureManeger*texManager)
+	GraphicsPipeline*pso,Camera* camera,TextureManeger*texManager,
+	CreateResources* CResource)
 {
 
 	winApp_ = winApp;
@@ -9,6 +10,7 @@ void Suine::Initilize(WinApp*winApp,DirectXCommon* directX,
 	PSO_ = pso;
 	camera_ = camera;
 	texManager_ = texManager;
+	CResource_ = CResource;
 
 	//WinAPP
 	winApp_->Initilize();
@@ -51,6 +53,8 @@ void Suine::Initilize(WinApp*winApp,DirectXCommon* directX,
 	//TextureManager
 	texManager_->Initilize(directX_);
 
+	//CreateResource
+	CResource_->Initilize(directX_);
 	//sprite
 
 }
@@ -79,6 +83,6 @@ void Suine::EndFrame()
 
 void Suine::Finalize()
 {
-	
+	directX_->Finalize();
 
 }

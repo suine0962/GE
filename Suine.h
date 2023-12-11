@@ -7,13 +7,13 @@
 #include"Camera.h"
 #include"TextureManeger.h"
 #include"Sprite.h"
-
+#include"CreateResource.h"
 
 class Suine
 {
 public:
 	void Initilize(WinApp*winApp,DirectXCommon*directX,GraphicsPipeline*pso_,
-		Camera*camera,TextureManeger*texManager);
+		Camera*camera,TextureManeger*texManager,CreateResources*CResource);
 
 	void Finalize();
 
@@ -40,5 +40,7 @@ private:
 	TextureManeger* texManager_ = nullptr;
 
 	Sprite* sprite = nullptr;
+
+	CreateResources* CResource_ = nullptr;
 };
 

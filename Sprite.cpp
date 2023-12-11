@@ -1,9 +1,12 @@
 #include "Sprite.h"
 	
-void Sprite::Initilize(
+void Sprite::Initilize(CreateResources*CResource,GraphicsPipeline*PSO,DirectXCommon*directX,
 	Vector2 leftpos, float size, WorldTransform worldTransform,
 	texResourceProperty texResource, const SpriteMode mode)
 {
+	directX_ = directX;
+	CResource_ = CResource;
+	PSO_ = PSO;
 	worldTransform_ = worldTransform;
 	tex = texResource;
 
@@ -137,22 +140,22 @@ void Sprite::Releace(ID3D12Resource* resource)
 
 void Sprite::CommandCall(const int Num)
 {
-	PSOProperty PSO = pso_->GetPSO().sprite;
+	PSOProperty PSO = PSO_->GetPSO().sprite;
 
 	directX_->GetcommandList()->SetGraphicsRootSignature(PSO.rootSignature);
 	directX_->GetcommandList()->SetPipelineState(PSO.GrahicsPipeLineState);
 	//形状を設定
 	directX_->GetcommandList()->IASetVertexBuffers(0, 1, &resource_.vertexBufferView_);
 
-	//wvp用のCBufferの場所を設定
-	directX_->GetcommandList()->SetGraphicsRootConstantBufferView(1, resource_.wvpResource->GetGPUVirtualAddress());
+	directX_->GetcommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	//マテリアルCBufferの場所を設定
 	directX_->GetcommandList()->SetGraphicsRootConstantBufferView(0, resource_.Material->GetGPUVirtualAddress());
 
+	//wvp用のCBufferの場所を設定
+	directX_->GetcommandList()->SetGraphicsRootConstantBufferView(1, resource_.wvpResource->GetGPUVirtualAddress());
 	//
 	directX_->GetcommandList()->SetGraphicsRootDescriptorTable(2, tex.SrvHandleGPU);
-
 	//描画(ドローコール)
 	directX_->GetcommandList()->DrawInstanced(Num, 1, 0, 0);
 
@@ -192,11 +195,10 @@ ID3D12Resource* Sprite::CreatBufferResourceSprite(size_t sizeInbytes)
 	ResouceDesc.SampleDesc.Count = 1;
 	//バッファの場合はこれにするきまり
 	ResouceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-	//実際に頂点リソースを作る
-	ID3D12Resource* Resource = nullptr;
+
 	HRESULT hr = directX_->Getdevice()->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE,
 		&ResouceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
-		IID_PPV_ARGS(&Resource));
+		IID_PPV_ARGS(&RssultResource));
 	assert(SUCCEEDED(hr));
 
 
